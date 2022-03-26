@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import usePan from "./usePan/usePan";
 import useZoom from "./useZoom/useZoom";
 
-export const Canvas = () => {
+export const Canvas = ({ drawAllItems }) => {
   const [canvasContext, setCanvasContext] = useState();
 
   const canvasRef = useRef(null);
@@ -25,7 +25,8 @@ export const Canvas = () => {
     const context = canvasRef.current.getContext("2d");
     setCanvasContext(context);
     drawZoomAndPosition(getZoom, context, canvasRef, getCameraOffset);
-    drawItems(context);
+
+    drawAllItems(context);
   }, []);
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export const Canvas = () => {
       zooming || panning,
       () =>
         drawZoomAndPosition(getZoom, canvasContext, canvasRef, getCameraOffset),
-      () => drawItems(canvasContext)
+      () => drawAllItems(canvasContext)
     );
   }, [zooming, panning]);
 
@@ -70,22 +71,4 @@ function drawZoomAndPosition(getZoom, ctx, canvasRef, getCameraOffset) {
   ctx.translate(OGWidth + getCameraOffset().x, OGHeight + getCameraOffset().y);
 
   ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-}
-
-function drawItems(ctx) {
-  ctx.fillStyle = "#991111";
-  ctx.fillRect(-50, -50, 100, 100);
-}
-
-function initImage(ctx) {
-  const img = new Image();
-
-  img.onload = function () {
-    ctx.fillRect(130, 190, 40, 60);
-    ctx.drawImage(img, 100, 100);
-  };
-
-  img.src = "logo192.png";
-
-  return img;
 }
