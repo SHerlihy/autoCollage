@@ -1,29 +1,21 @@
-export function drawAllItems(ctx) {
-  drawBox(ctx);
-  drawOtherBox(ctx);
-  drawImage(ctx);
+import { getFulfilled, loadImages } from "./imageLoader";
+import screamImg from "../../src/assets/img_the_scream.jpg";
+
+const { getLoadedImages } = loadImages([screamImg]);
+
+export async function drawAllItems(ctx) {
+  const loadedImages = await getLoadedImages();
+  const successfullyLoaded = getFulfilled(loadedImages);
+  const positionedImages = positioningAlgorithm(successfullyLoaded);
+  drawLoadedImages(ctx, positionedImages);
 }
 
-const drawBox = function (ctx) {
-  return new Promise(function (res, rej) {
-    ctx.fillStyle = "#991111";
-    ctx.fillRect(-50, -50, 100, 100);
-    res("drawBox fulfilled");
-  }).then((resp) => console.log(resp));
+const drawLoadedImages = function (ctx, loadedImages) {
+  for (const { loadedImage, x, y } of loadedImages) {
+    console.log(loadedImage.width);
+    console.log(loadedImage.height);
+    ctx.drawImage(loadedImage, 0, 0);
+  }
 };
 
-const drawOtherBox = function (ctx) {
-  return new Promise(function (res, rej) {
-    ctx.fillStyle = "#991111";
-    ctx.fillRect(-100, -100, 100, 100);
-    res("drawOtherBox fulfilled");
-  }).then((resp) => console.log(resp));
-};
-
-const drawImage = function (ctx) {
-  const canvasImage = new Image();
-  canvasImage.src = "src/logo.svg";
-  canvasImage.onload = () => {
-    ctx.drawImage(canvasImage, 100, 100);
-  };
-};
+const positioningAlgorithm = function (images) {};
