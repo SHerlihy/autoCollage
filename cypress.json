@@ -1,4 +1,4 @@
 {
   "integrationFolder": ".",
-  "testFiles": ["src/**/*.test.js"]
+  "testFiles": ["src/**/*.test.ts", "src/**/*.test.js"]
 }
