@@ -1,5 +1,3 @@
-import { determineNextPoint } from "./nextPerimeterPoint";
-
 const determineEdges = (loadedImages) => {
   const { image, x, y } = loadedImages;
 
@@ -258,53 +256,4 @@ const generatePointsMap = (loadedImages) => {
   return pointsMap;
 };
 
-const determinePerimeterPoints = (allPoints, offset) => {
-  const topPoint = determineTopPoint(allPoints);
-  const nextImagePoint = determineImagesNextPoint(topPoint);
-
-  const perimeterPoints = determineRemainingPerimeterPoints(
-    topPoint,
-    nextImagePoint,
-    offset,
-    allPoints
-  );
-
-  return perimeterPoints;
-};
-
 // I need points that have uids and coordinantes
-
-const determineRemainingPerimeterPoints = (
-  startingPoint,
-  startingNextImagePoint,
-  offset,
-  allPoints
-) => {
-  const perimeterPoints = new Map();
-  const allOtherPoints = new Map(allPoints);
-
-  const setPerimeterPoints = (currentPoint, potentialNextPoint) => {
-    allOtherPoints.delete(currentPoint.id);
-
-    const nextPoint = determineNextPoint(
-      currentPoint.coordinates,
-      potentialNextPoint.coordinates,
-      offset,
-      allOtherPoints
-    );
-
-    allOtherPoints.delete(potentialNextPoint.id);
-
-    if (nextPoint.id === startingPoint.id) {
-      return perimeterPoints;
-    }
-
-    perimeterPoints.set(nextPoint);
-
-    const nextImagePoint = determineImagesNextPoint(nextPoint);
-
-    setPerimeterPoints(nextPoint, nextImagePoint);
-  };
-
-  return setPerimeterPoints(startingPoint, startingNextImagePoint);
-};

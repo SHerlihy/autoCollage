@@ -1,26 +1,38 @@
 {
+  "$schema": ["https://json.schemastore.org/tsconfig","https://json.schemastore.org/tsconfig"],
+  "display": ["Create React App", "Cypress"],
+
+
   "compilerOptions": {
-    "target": "es5",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
+    "target": "es5",
+    "downlevelIteration": true,
+
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
     "noEmit": true,
-    "jsx": "react-jsx"
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "types": ["cypress"]
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src/**/*.ts"]
 }
+
+// {
+//   "$schema": "https://json.schemastore.org/tsconfig",
+//   "display": "Cypress",
+//   "compilerOptions": {
+//     "target": "es5",
+//     "lib": ["es5", "dom"],
+//     "types": ["cypress"]
+//   },
+//   "include": ["src/**/*.ts"]
+// }
