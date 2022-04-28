@@ -45,3 +45,49 @@ export const getSideLengthFromAnglesAndSide = (sideA, angleA, angleOpp) => {
 const radiansToAngle = (rads) => {
   return (rads * 180) / Math.PI;
 };
+
+export const getAngleFromSideLengths = (
+  oppositeSide,
+  angleSideA,
+  angleSideB
+) => {
+  const preCos =
+    (angleSideB ** 2 + angleSideA ** 2 - oppositeSide ** 2) /
+    (2 * angleSideB * angleSideA);
+  return radiansToAngle(Math.acos(preCos));
+};
+
+export const edgeLengthFromCoordinates = (
+  { x: fromX, y: fromY },
+  { x: toX, y: toY }
+) => {
+  const sideX = Math.abs(fromX - toX);
+  const sideY = Math.abs(fromY - toY);
+
+  return getHypotenuseSideFromSides(sideX, sideY);
+};
+
+export const angleFromCoordinates = (
+  prevCoordinates,
+  subjectCoordinates,
+  nextCoordinates
+) => {
+  const subjectPrevSide = edgeLengthFromCoordinates(
+    subjectCoordinates,
+    prevCoordinates
+  );
+  const subjectNextSide = edgeLengthFromCoordinates(
+    subjectCoordinates,
+    nextCoordinates
+  );
+  const prevNextSide = edgeLengthFromCoordinates(
+    prevCoordinates,
+    nextCoordinates
+  );
+
+  return getAngleFromSideLengths(
+    prevNextSide,
+    subjectPrevSide,
+    subjectNextSide
+  );
+};
