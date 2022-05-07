@@ -12,7 +12,7 @@ export const determinePerimeterPoints = (allPoints: IPointsMap, offset: number) 
     allPoints
   );
 
-  return perimeterPointIds;
+  return perimeterPointIds
 };
 
 const determineRemainingPerimeterPointIds = (

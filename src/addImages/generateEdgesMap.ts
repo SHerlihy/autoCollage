@@ -1,8 +1,8 @@
 import { IPoint, IPointsMap } from "../perimeter/pointsTypes";
 import { angleFromCoordinates } from "../perimeter/triganomitryHelpers";
-import { generateNovelId } from "./createIds";
+import { CreateIds } from "./createIds";
 
-type EdgeType = "crevice" | "leftAcute" | "rightAcute" | "bothAcute" | 'bothObtuse';
+export type EdgeType = "crevice" | "leftAcute" | "rightAcute" | "bothAcute" | 'bothObtuse';
 
 type EdgeId = string
 
@@ -22,11 +22,11 @@ interface IEdgePreTyped extends Omit<IEdgePrecursor, 'prevPoint'| 'nextPoint'> {
   nextPoint?: IPoint;
 }
 
-interface IEdge extends Omit<IEdgePrecursor, 'prevPoint' | 'nextPoint' | 'type'> {
+export interface IEdge extends Omit<IEdgePrecursor, 'prevPoint' | 'nextPoint' | 'type'> {
   type: EdgeType;
 }
 
-interface IEdgesMap extends Map<EdgeId, IEdge> {};
+export interface IEdgesMap extends Map<EdgeId, IEdge> {};
 
 export const generateEdgesMap = (perimeterPoints: IPointsMap): IEdgesMap => {
   const freshEdgesArray = generateEdgesArray(perimeterPoints);
@@ -63,7 +63,7 @@ const determineEdgeTypes = (freshEdgesArray: IEdgePrecursor[]): IEdge[] =>{
 
 const generateEdgesArray = (perimeterPoints: IPointsMap): IEdgePrecursor[] => {
   const edgesArr = [];
-
+  debugger;
   for (const [key, value] of perimeterPoints.entries()) {
     const prevPoint = value;
     const from = perimeterPoints.get(value.nextImgPointId);
@@ -74,6 +74,8 @@ const generateEdgesArray = (perimeterPoints: IPointsMap): IEdgePrecursor[] => {
       throw Error('Perimeter point without proceeding point in generateEdgesArray')
     }
 
+    const nextEdge = CreateIds.getInstance().generateNovelId();
+
     const perimeterEdge = {
       prevPoint,
       nextPoint,
@@ -82,7 +84,7 @@ const generateEdgesArray = (perimeterPoints: IPointsMap): IEdgePrecursor[] => {
         from,
         to,
       },
-      nextEdge: generateNovelId(),
+      nextEdge,
     }
 
     edgesArr.push(perimeterEdge);
@@ -92,18 +94,17 @@ const generateEdgesArray = (perimeterPoints: IPointsMap): IEdgePrecursor[] => {
 }
 
 const deriveEdgesMapFromArray = (edgesArr: IEdge[]): IEdgesMap => {
-  const edgesMap = new Map();
+  const edgesMap = new Map<EdgeId, IEdge>();
 
   edgesArr.forEach((edge, idx, arr) => {
     if(idx === 0){
       const currentId = arr[arr.length-1].nextEdge;
       edgesMap.set(currentId, edge)
-    }
-
+    } else {
     const currentId = arr[idx - 1].nextEdge;
     edgesMap.set(currentId, edge)
+    }
   })
-
 return edgesMap;
 }
 
