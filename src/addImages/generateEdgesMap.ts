@@ -2,7 +2,12 @@ import { IPoint, IPointsMap } from "../perimeter/pointsTypes";
 import { angleFromCoordinates } from "../perimeter/triganomitryHelpers";
 import { CreateIds } from "./createIds";
 
-export type EdgeType = "crevice" | "leftAcute" | "rightAcute" | "bothAcute" | 'bothObtuse';
+export interface IEdgeType {
+  from: AngleType;
+  to: AngleType;
+}
+
+export type AngleType = "crevice" | "acute" | "obtuse" | "right";
 
 type EdgeId = string
 
@@ -14,7 +19,7 @@ interface IEdgePrecursor {
         to: IPoint;
     };
     nextEdge: EdgeId;
-    type?: EdgeType;
+    type?: IEdgeType;
 }
 
 interface IEdgePreTyped extends Omit<IEdgePrecursor, 'prevPoint'| 'nextPoint'> {
@@ -23,7 +28,7 @@ interface IEdgePreTyped extends Omit<IEdgePrecursor, 'prevPoint'| 'nextPoint'> {
 }
 
 export interface IEdge extends Omit<IEdgePrecursor, 'prevPoint' | 'nextPoint' | 'type'> {
-  type: EdgeType;
+  type: IEdgeType;
 }
 
 export interface IEdgesMap extends Map<EdgeId, IEdge> {};
@@ -43,7 +48,7 @@ const determineEdgeTypes = (freshEdgesArray: IEdgePrecursor[]): IEdge[] =>{
     const {prevPoint, nextPoint} = freshEdge;
     const {from, to} = freshEdge.coordinates;
 
-    const isCrevice = determineEdgeType(prevPoint, from, to, nextPoint);
+    const isCrevice = determineIsCrevice(prevPoint, from, to, nextPoint);
 
     const typedEdge: IEdgePreTyped = {...freshEdge}
 
@@ -51,7 +56,7 @@ const determineEdgeTypes = (freshEdgesArray: IEdgePrecursor[]): IEdge[] =>{
     delete typedEdge.nextPoint;
 
     if(isCrevice){
-      typedEdge['type'] = 'crevice';
+      typedEdge['type'] = {from: 'crevice', to: 'crevice'} ;
       return typedEdge as IEdge;
     };
 
@@ -63,7 +68,7 @@ const determineEdgeTypes = (freshEdgesArray: IEdgePrecursor[]): IEdge[] =>{
 
 const generateEdgesArray = (perimeterPoints: IPointsMap): IEdgePrecursor[] => {
   const edgesArr = [];
-  debugger;
+
   for (const [key, value] of perimeterPoints.entries()) {
     const prevPoint = value;
     const from = perimeterPoints.get(value.nextImgPointId);
@@ -108,20 +113,15 @@ const deriveEdgesMapFromArray = (edgesArr: IEdge[]): IEdgesMap => {
 return edgesMap;
 }
 
-const determineAcuteness = (angleFrom: number, angleTo: number) =>{
-  if(angleFrom < 90 && angleTo < 90){
-    return 'bothAcute'
+const classifyAngle = (angle: number) =>{
+  const roundedAngle = Math.round(angle)
+  if(roundedAngle < 90) {
+    return 'acute'
   }
-
-  if(angleFrom < 90 && angleTo > 90){
-    return 'leftAcute'
+  if(roundedAngle > 90) {
+    return 'obtuse'
   }
-
-  if(angleFrom > 90 && angleTo < 90){
-    return 'rightAcute'
-  }
-
-  return 'bothObtuse'
+  return 'right'
 }
 
 const determineEdgeAngles = (creviceEdge: IEdgePrecursor) =>{
@@ -132,34 +132,24 @@ const determineEdgeAngles = (creviceEdge: IEdgePrecursor) =>{
 
     const angleTo = angleFromCoordinates(from.coordinates, to.coordinates, nextPoint.coordinates);
 
-    const acuteness = determineAcuteness(angleFrom, angleTo);
+    const fromType = classifyAngle(angleFrom);
+    const toType = classifyAngle(angleTo);
 
-    creviceEdge['type'] = acuteness;
+    creviceEdge['type'] = {from: fromType, to: toType};
 
     return creviceEdge as Required<IEdgePrecursor>;
 }
 
-const determineEdgeType = (prevPoint: IPoint, startPoint: IPoint, endPoint: IPoint, nextPoint: IPoint) =>{
+const determineIsCrevice = (prevPoint: IPoint, startPoint: IPoint, endPoint: IPoint, nextPoint: IPoint) =>{
   const startSide = determinePointSideOfLine(prevPoint, nextPoint, startPoint);
   const endSide = determinePointSideOfLine(prevPoint, nextPoint, endPoint);
 
-  if(startSide<0){
-    if(endSide<0){
-      return true
-    }
-    if(endSide>0){
-      return false
-    }
+  // negative is outside
+  if(startSide > 0 || endSide > 0){
+    return true;
   }
 
-  if(startSide>0){
-    if(endSide>0){
-      return true
-    }
-    if(endSide<0){
-      return false
-    }
-  }
+  return false;
 }
 
 const determinePointSideOfLine = (lineStart: IPoint, lineEnd: IPoint, point: IPoint) => {
