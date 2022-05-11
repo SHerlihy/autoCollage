@@ -46,6 +46,10 @@ const radiansToAngle = (rads) => {
   return (rads * 180) / Math.PI;
 };
 
+export const angleToRads = (angle) => {
+  return (angle * Math.PI) / 180;
+};
+
 export const getAngleFromSideLengths = (
   oppositeSide,
   angleSideA,
@@ -55,6 +59,13 @@ export const getAngleFromSideLengths = (
     (angleSideB ** 2 + angleSideA ** 2 - oppositeSide ** 2) /
     (2 * angleSideB * angleSideA);
   return radiansToAngle(Math.acos(preCos));
+};
+
+export const edgeLengthFromOppAngleAndEdges = (oppositeAngle, edgeA, edgeB) => {
+  const deduction = 2 * edgeA * edgeB * Math.cos(oppositeAngle);
+  const addition = edgeA ** 2 + edgeB ** 2;
+
+  return (addition - deduction) ** 0.5;
 };
 
 export const edgeLengthFromCoordinates = (
@@ -90,4 +101,14 @@ export const angleFromCoordinates = (
     subjectPrevSide,
     subjectNextSide
   );
+};
+
+export const sideLengthFromPairedSideAngle = (
+  pairedSide,
+  pairedAngle,
+  oppositeAngle
+) => {
+  const resNumerator = pairedSide * Math.sin(oppositeAngle);
+
+  return resNumerator / Math.sin(pairedAngle);
 };
