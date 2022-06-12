@@ -1,4 +1,4 @@
-export const getAngleFromSides = (opposite, sideA, sideB) => {
+export const getRadiansFromSides = (opposite, sideA, sideB) => {
   const A2 = sideA ** 2;
   const B2 = sideB ** 2;
   const opposite2 = opposite ** 2;
@@ -6,7 +6,7 @@ export const getAngleFromSides = (opposite, sideA, sideB) => {
   const nominator = A2 + B2 - opposite2;
   const denominator = 2 * sideA * sideB;
 
-  return Math.cosh(nominator / denominator);
+  return Math.acos(nominator / denominator);
 };
 
 export const getNonHypotenuseSideFromSides = (hyp, side) => {
@@ -26,31 +26,58 @@ export const getHypotenuseSideFromSides = (sideA, sideB) => {
   return squaredSide ** 0.5;
 };
 
+export const getDegreesFromNonHypotenuseSides = (opposite, adjacent) => {
+  const rads = getRadiansFromNonHypotenuseSides();
+
+  return radiansToDegrees(rads);
+};
+
 export const getRadiansFromNonHypotenuseSides = (opposite, adjacent) => {
   const radians = Math.atan(opposite / adjacent);
 
   return radians;
 };
 
-export const SOHOppositeSide = (hyp, oppRads) => {
+export const SOHOppositeSideFromDegrees = (hyp, oppDegrees) => {
+  const rads = degreesToRads(oppDegrees);
+
+  return SOHOppositeSideFromRadians(hyp, rads);
+};
+
+export const SOHOppositeSideFromRadians = (hyp, oppRads) => {
   return hyp * Math.sin(oppRads);
 };
 
-export const getSideLengthFromAnglesAndSide = (sideA, angleA, angleOpp) => {
-  const resolvedPair = sideA / Math.sin(angleA);
+export const getSideLengthFromDegreesAndSide = (
+  sideA,
+  degreesA,
+  degreesOpp
+) => {
+  const radiansA = degreesToRads(degreesA);
+  const radiansOpp = degreesToRads(degreesOpp);
 
-  return resolvedPair * Math.sin(angleOpp);
+  return getSideLengthFromRadiansAndSide(sideA, radiansA, radiansOpp);
 };
 
-const radiansToAngle = (rads) => {
+export const getSideLengthFromRadiansAndSide = (
+  sideA,
+  radiansA,
+  radiansOpp
+) => {
+  const resolvedPair = sideA / Math.sin(radiansA);
+
+  return resolvedPair * Math.sin(radiansOpp);
+};
+
+export const radiansToDegrees = (rads) => {
   return (rads * 180) / Math.PI;
 };
 
-export const angleToRads = (angle) => {
+export const degreesToRads = (angle) => {
   return (angle * Math.PI) / 180;
 };
 
-export const getAngleFromSideLengths = (
+export const getRadiansFromSideLengths = (
   oppositeSide,
   angleSideA,
   angleSideB
@@ -58,11 +85,13 @@ export const getAngleFromSideLengths = (
   const preCos =
     (angleSideB ** 2 + angleSideA ** 2 - oppositeSide ** 2) /
     (2 * angleSideB * angleSideA);
-  return radiansToAngle(Math.acos(preCos));
+  return Math.acos(preCos);
 };
 
 export const edgeLengthFromOppAngleAndEdges = (oppositeAngle, edgeA, edgeB) => {
-  const deduction = 2 * edgeA * edgeB * Math.cos(oppositeAngle);
+  const angleRads = degreesToRads(oppositeAngle);
+  const resolvedCosRads = Math.cos(angleRads);
+  const deduction = 2 * edgeA * edgeB * resolvedCosRads;
   const addition = edgeA ** 2 + edgeB ** 2;
 
   return (addition - deduction) ** 0.5;
@@ -78,7 +107,7 @@ export const edgeLengthFromCoordinates = (
   return getHypotenuseSideFromSides(sideX, sideY);
 };
 
-export const angleFromCoordinates = (
+export const radiansFromCoordinates = (
   prevCoordinates,
   subjectCoordinates,
   nextCoordinates
@@ -96,19 +125,9 @@ export const angleFromCoordinates = (
     nextCoordinates
   );
 
-  return getAngleFromSideLengths(
+  return getRadiansFromSideLengths(
     prevNextSide,
     subjectPrevSide,
     subjectNextSide
   );
-};
-
-export const sideLengthFromPairedSideAngle = (
-  pairedSide,
-  pairedAngle,
-  oppositeAngle
-) => {
-  const resNumerator = pairedSide * Math.sin(oppositeAngle);
-
-  return resNumerator / Math.sin(pairedAngle);
 };

@@ -1,9 +1,9 @@
 import {
-  getAngleFromSides,
+  getRadiansFromSides,
   getHypotenuseSideFromSides,
   getNonHypotenuseSideFromSides,
   getRadiansFromNonHypotenuseSides,
-  SOHOppositeSide,
+  SOHOppositeSideFromRadians,
 } from "./triganomitryHelpers";
 
 export const determineNextPoint = (
@@ -51,7 +51,7 @@ const validArea = (currentImageCoordinate, nextImageCoordinate, offset) => {
 
   const hyp = Math.abs(offset);
 
-  const xLength = SOHOppositeSide(hyp, oppositeRadians);
+  const xLength = SOHOppositeSideFromRadians(hyp, oppositeRadians);
 
   const yLength = getNonHypotenuseSideFromSides(hyp, xLength);
 
@@ -114,8 +114,12 @@ const determinePointBetweenParallelPoints = (point, rightPoint, leftPoint) => {
     leftPoint.y - point.y
   );
 
-  const leftAngle = getAngleFromSides(lengthLeftTo, lengthRightTo, lengthRight);
-  const RightAngle = getAngleFromSides(
+  const leftAngle = getRadiansFromSides(
+    lengthLeftTo,
+    lengthRightTo,
+    lengthRight
+  );
+  const RightAngle = getRadiansFromSides(
     lengthRightTo,
     lengthLeftTo,
     lengthRight

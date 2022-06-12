@@ -1,7 +1,9 @@
 {
-  "$schema": ["https://json.schemastore.org/tsconfig","https://json.schemastore.org/tsconfig"],
+  "$schema": [
+    "https://json.schemastore.org/tsconfig",
+    "https://json.schemastore.org/tsconfig"
+  ],
   "display": ["Create React App", "Cypress"],
-
 
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -16,23 +18,16 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "moduleResolution": "node",
-    "noEmit": true,
+    "noEmit": false,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "types": ["cypress"]
+    "types": ["cypress"],
+
+    "outDir": "./build/",
+    "noImplicitAny": true,
+    "sourceMap": true
   },
   "include": ["src/**/*.ts"]
 }
-
-// {
-//   "$schema": "https://json.schemastore.org/tsconfig",
-//   "display": "Cypress",
-//   "compilerOptions": {
-//     "target": "es5",
-//     "lib": ["es5", "dom"],
-//     "types": ["cypress"]
-//   },
-//   "include": ["src/**/*.ts"]
-// }
