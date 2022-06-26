@@ -1,9 +1,0 @@
-{
-  "presets": [
-    "@babel/react",
-    "@babel/typescript",
-    "@babel/preset-typescript",
-    ["@babel/env", { "modules": false }]
-  ],
-  "plugins": [["@babel/plugin-transform-modules-commonjs", { "loose": true }]]
-}

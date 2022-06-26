@@ -38,7 +38,7 @@ export interface IEdge
 
 export interface IEdgesMap extends Map<EdgeId, IEdge> {}
 
-export const generateEdgesMap = (perimeterPoints: IPointsMap): IEdgesMap => {
+export let generateEdgesMap = (perimeterPoints: IPointsMap): IEdgesMap => {
   const freshEdgesArray = generateEdgesArray(perimeterPoints);
 
   const typedEdgesArray = determineEdgeTypes(freshEdgesArray);
@@ -190,14 +190,14 @@ const determinePointSideOfLine = (
   return resolveX - resolveY;
 };
 
-// @ts-ignore
-export const stubGenerateEdgesMap;
+// // @ts-ignore
+// export const stubGenerateEdgesMap;
 
-// @ts-ignore
-if (window.Cypress) {
-  // @ts-ignore
-  stubGenerateEdgesMap = (stub: (perimeterPoints: IPointsMap) => IEdgesMap) => {
-    // @ts-ignore
-    generateEdgesMap = stub;
-  };
-}
+// // @ts-ignore
+// if (window.Cypress) {
+//   // @ts-ignore
+//   stubGenerateEdgesMap = (stub: (perimeterPoints: IPointsMap) => IEdgesMap) => {
+//     // @ts-ignore
+//     generateEdgesMap = stub;
+//   };
+// }

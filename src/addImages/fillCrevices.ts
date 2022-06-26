@@ -13,7 +13,6 @@ export const fillCrevices = (
   agglomeratedImgPerimeter: Map<string, IPoint>,
   clearanceWidth: number
 ): Map<string, IPoint> => {
-  debugger;
   const agglomeratedImgEdges = generateEdgesMap(agglomeratedImgPerimeter);
 
   const preCreviceEdgeIds = new Set<string>();
@@ -39,7 +38,7 @@ export const fillCrevices = (
 
     const topLeft = leftCreviceEdge!.points.from.coordinates;
     const bottom = leftCreviceEdge!.points.to.coordinates;
-    const topRight = rightCreviceEdge!.points.from.coordinates;
+    const topRight = rightCreviceEdge!.points.to.coordinates;
 
     coordinatesOfCrevices.push({
       topLeft,

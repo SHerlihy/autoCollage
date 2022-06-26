@@ -1,4 +1,0 @@
-{
-  "integrationFolder": "./build/tests",
-  "testFiles": ["*.js"]
-}

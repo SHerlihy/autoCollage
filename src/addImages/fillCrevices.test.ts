@@ -37,7 +37,7 @@ describe("fillCrevices", () => {
       } as IPoint);
 
       const edgesArr = pointsArr.map((point, index, arr) => {
-        const toCrevice = preCreviceIndexes.find((cIdx) => cIdx === index)
+        const toCrevice = preCreviceIndexes.some((cIdx) => cIdx === index)
           ? "crevice"
           : "right";
         return [
@@ -56,13 +56,16 @@ describe("fillCrevices", () => {
         ] as readonly [string, generateEdgesMapModule.IEdge];
       });
 
-      const lastEdge = edgesArr.pop();
+      const lastEdge = edgesArr.pop()!;
 
-      lastEdge![1].points.to = pointsArr[0];
+      lastEdge[1].points.to = pointsArr[0];
 
-      debugger;
+      edgesArr.push(lastEdge);
 
-      generateEdgesMapModule.stubGenerateEdgesMap(() => new Map(edgesArr));
+      cy.stub(generateEdgesMapModule, "generateEdgesMap").callsFake(() => {
+        console.log("fake called");
+        return new Map(edgesArr);
+      });
 
       return {
         imgPerimeter,
@@ -70,6 +73,7 @@ describe("fillCrevices", () => {
     };
 
     it.only("returns image perimeter without crevice bottom coordinate", () => {
+      debugger;
       const { imgPerimeter } = setupSingleCreviceTest(
         "001",
         rectangleTopCreviceCoordinates,
@@ -77,7 +81,6 @@ describe("fillCrevices", () => {
       );
 
       const filledImgPerimeter = fillCrevices(imgPerimeter, 1);
-      debugger;
       for (const point of filledImgPerimeter.values()) {
         const { x, y } = point.coordinates;
 

@@ -1,22 +1,10 @@
 const path = require("path");
 
-// const fs = require("fs");
-// const entryMap = {};
-
-// fs.readdirSync("./src")
-//   .filter((file) => {
-//     console.log(file);
-//     return file.match(/\.test\.ts?$/);
-//   })
-//   .forEach((f) => {
-//     entryMap[f.replace(/\.test\.ts?$/, "")] = f;
-//   });
-
 const creviceFile = "src/addImages/fillCrevices.test.ts";
 
 module.exports = {
   entry: { fillCrevices: `./${creviceFile}` },
-  devtool: "inline-source-map",
+  devtool: "eval-source-map",
   output: {
     filename: "tests/[name].js",
     path: path.resolve(__dirname, "build"),
@@ -29,6 +17,20 @@ module.exports = {
         exclude: [/(node_modules|bower_components)/],
         use: [
           {
+            loader: "babel-loader",
+            options: {
+              presets: [["@babel/preset-env", { targets: "defaults" }]],
+              plugins: [
+                [
+                  "@babel/plugin-transform-modules-commonjs",
+                  {
+                    loose: true,
+                  },
+                ],
+              ],
+            },
+          },
+          {
             loader: "ts-loader",
             options: {
               onlyCompileBundledFiles: true,
@@ -37,9 +39,10 @@ module.exports = {
         ],
       },
       {
-        test: /\.js$/,
-        use: ["source-map-loader"],
+        test: /(\.ts?$|\.js$)/,
+        exclude: [/(node_modules|bower_components)/],
         enforce: "pre",
+        use: ["source-map-loader"],
       },
     ],
   },
