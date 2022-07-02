@@ -12,75 +12,84 @@ export interface IEdgeType {
 
 export type AngleType = "crevice" | "acute" | "obtuse" | "right";
 
+export interface ITypedPoint extends IPoint {
+  type: AngleType;
+}
+
+interface ITypedPointsMap extends Map<string, ITypedPoint> {}
+
 type EdgeId = string;
 
-interface IEdgePrecursor {
-  prevPoint: IPoint;
-  nextPoint: IPoint;
+export interface IEdge {
   points: {
-    from: IPoint;
-    to: IPoint;
+    from: ITypedPoint;
+    to: ITypedPoint;
   };
   nextEdge: EdgeId;
-  type?: IEdgeType;
-}
-
-interface IEdgePreTyped
-  extends Omit<IEdgePrecursor, "prevPoint" | "nextPoint"> {
-  prevPoint?: IPoint;
-  nextPoint?: IPoint;
-}
-
-export interface IEdge
-  extends Omit<IEdgePrecursor, "prevPoint" | "nextPoint" | "type"> {
-  type: IEdgeType;
 }
 
 export interface IEdgesMap extends Map<EdgeId, IEdge> {}
 
-export let generateEdgesMap = (perimeterPoints: IPointsMap): IEdgesMap => {
-  const freshEdgesArray = generateEdgesArray(perimeterPoints);
+export const generateEdgesMap = (perimeterPoints: IPointsMap): IEdgesMap => {
+  const typedPointsMap = determinePointTypes(perimeterPoints);
 
-  const typedEdgesArray = determineEdgeTypes(freshEdgesArray);
+  const perimeterPointsArr = [...typedPointsMap.entries()];
+  const finalEntry = perimeterPointsArr.pop()!;
+  perimeterPointsArr.unshift(finalEntry);
 
-  const edgesMap = deriveEdgesMapFromArray(typedEdgesArray);
+  const freshEdgesArray = generateEdgesArray(new Map(perimeterPointsArr));
+
+  const edgesMap = deriveEdgesMapFromArray(freshEdgesArray);
 
   return edgesMap;
 };
 
-const determineEdgeTypes = (freshEdgesArray: IEdgePrecursor[]): IEdge[] => {
-  return freshEdgesArray.map((freshEdge) => {
-    const { prevPoint, nextPoint } = freshEdge;
-    const { from, to } = freshEdge.points;
+const determinePointTypes = (pointsMap: IPointsMap) => {
+  const typedPointsMap = new Map<string, ITypedPoint>();
 
-    const isCrevice = determineIsCrevice(prevPoint, from, to, nextPoint);
+  for (const [key, point] of pointsMap) {
+    const prevPoint = point;
+    const fromPoint = pointsMap.get(prevPoint.nextImgPointId)!;
+    const toPoint = pointsMap.get(fromPoint.nextImgPointId)!;
+    const nextPoint = pointsMap.get(toPoint.nextImgPointId)!;
 
-    const typedEdge: IEdgePreTyped = { ...freshEdge };
+    const isCrevice = determineIsCrevice(
+      prevPoint,
+      fromPoint,
+      toPoint,
+      nextPoint
+    );
 
-    delete typedEdge.prevPoint;
-    delete typedEdge.nextPoint;
+    const typedPoint: Partial<ITypedPoint> & Omit<ITypedPoint, "type"> = {
+      ...fromPoint,
+    };
 
     if (isCrevice) {
-      typedEdge["type"] = { from: "crevice", to: "crevice" };
-      return typedEdge as IEdge;
+      typedPoint["type"] = "crevice";
+      typedPointsMap.set(prevPoint.nextImgPointId, typedPoint as ITypedPoint);
+    } else {
+      const angleType = determineEdgeAnglesFromPoints(
+        prevPoint,
+        fromPoint,
+        toPoint
+      );
+
+      typedPoint["type"] = angleType;
+      typedPointsMap.set(prevPoint.nextImgPointId, typedPoint as ITypedPoint);
     }
+  }
 
-    const angledEdge = determineEdgeAngles(freshEdge);
-
-    return angledEdge;
-  });
+  return typedPointsMap;
 };
 
-const generateEdgesArray = (perimeterPoints: IPointsMap): IEdgePrecursor[] => {
+const generateEdgesArray = (perimeterPoints: ITypedPointsMap): IEdge[] => {
   const edgesArr = [];
 
-  for (const [key, value] of perimeterPoints.entries()) {
-    const prevPoint = value;
-    const from = perimeterPoints.get(value.nextImgPointId);
+  for (const value of perimeterPoints.values()) {
+    const from = value;
     const to = perimeterPoints.get(from!.nextImgPointId);
-    const nextPoint = perimeterPoints.get(to!.nextImgPointId);
 
-    if (!from || !to || !nextPoint) {
+    if (!from || !to) {
       throw Error(
         "Perimeter point without proceeding point in generateEdgesArray"
       );
@@ -89,8 +98,6 @@ const generateEdgesArray = (perimeterPoints: IPointsMap): IEdgePrecursor[] => {
     const nextEdge = CreateIds.getInstance().generateNovelId();
 
     const perimeterEdge = {
-      prevPoint,
-      nextPoint,
       points: {
         from,
         to,
@@ -130,32 +137,22 @@ const classifyAngle = (angle: number) => {
   return "right";
 };
 
-const determineEdgeAngles = (creviceEdge: IEdgePrecursor) => {
-  const { prevPoint, nextPoint } = creviceEdge;
-  const { from, to } = creviceEdge.points;
-
+const determineEdgeAnglesFromPoints = (
+  prevPoint: IPoint,
+  fromPoint: IPoint,
+  toPoint: IPoint
+) => {
   const angleFrom = radiansToDegrees(
     radiansFromCoordinates(
       prevPoint.coordinates,
-      from.coordinates,
-      to.coordinates
-    )
-  );
-
-  const angleTo = radiansToDegrees(
-    radiansFromCoordinates(
-      from.coordinates,
-      to.coordinates,
-      nextPoint.coordinates
+      fromPoint.coordinates,
+      toPoint.coordinates
     )
   );
 
   const fromType = classifyAngle(angleFrom);
-  const toType = classifyAngle(angleTo);
 
-  creviceEdge["type"] = { from: fromType, to: toType };
-
-  return creviceEdge as Required<IEdgePrecursor>;
+  return fromType;
 };
 
 const determineIsCrevice = (
@@ -189,15 +186,3 @@ const determinePointSideOfLine = (
 
   return resolveX - resolveY;
 };
-
-// // @ts-ignore
-// export const stubGenerateEdgesMap;
-
-// // @ts-ignore
-// if (window.Cypress) {
-//   // @ts-ignore
-//   stubGenerateEdgesMap = (stub: (perimeterPoints: IPointsMap) => IEdgesMap) => {
-//     // @ts-ignore
-//     generateEdgesMap = stub;
-//   };
-// }

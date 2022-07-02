@@ -1,3 +1,4 @@
+import { ICoordinates } from "./pointsTypes";
 import {
   getRadiansFromSides,
   getHypotenuseSideFromSides,
@@ -7,10 +8,10 @@ import {
 } from "./triganomitryHelpers";
 
 export const determineNextPoint = (
-  currentImageCoordinate,
-  nextImageCoordinate,
-  offset,
-  allOtherPoints
+  currentImageCoordinate: ICoordinates,
+  nextImageCoordinate: ICoordinates,
+  offset: number,
+  allOtherPoints: ICoordinates[]
 ) => {
   const { TL, TR, BR, BL } = validArea(
     currentImageCoordinate,
@@ -24,28 +25,92 @@ export const determineNextPoint = (
     allOtherPoints
   );
 
-  const ascendingY = boxBoundedPoints.sort(({ y: aY }, { y: bY }) => {
-    return aY - bY;
-  });
+  const identifyClosestCoordinateToCoordinate = (
+    principleCoordinate: ICoordinates,
+    otherCoordinates: ICoordinates[]
+  ) => {
+    const { x: principleX, y: principleY } = principleCoordinate;
 
-  const nextPoint = ascendingY.find((point) => {
-    const inDepth = determinePointBetweenParallelPoints(point, BR, TR);
-    const inBreadth = determinePointBetweenParallelPoints(point, BL, BR);
+    const closestCoordinate = otherCoordinates.reduce(
+      (acc, otherCoordinate) => {
+        const { x: otherX, y: otherY } = otherCoordinate;
 
-    return inDepth && inBreadth;
-  });
+        const otherDistance = getHypotenuseSideFromSides(
+          Math.abs(principleX - otherX),
+          Math.abs(principleY - otherY)
+        );
+
+        if (!acc.distance || otherDistance < acc.distance) {
+          acc = {
+            closestCoordinate: otherCoordinate,
+            distance: otherDistance,
+          };
+        }
+
+        return acc;
+
+        //need to sort out distance, set to distance between edge coordinates
+      },
+      {} as { closestCoordinate: ICoordinates; distance: number }
+    );
+
+    return closestCoordinate;
+  };
+
+  // const ascendingY = boxBoundedPoints.sort(({ y: aY }, { y: bY }) => {
+  //   return aY - bY;
+  // });
+
+  // const nextPoint = ascendingY.find((point) => {
+  //   const inDepth = determinePointBetweenParallelPoints(point, BR, TR);
+  //   const inBreadth = determinePointBetweenParallelPoints(point, BL, BR);
+
+  //   return inDepth && inBreadth;
+  // });
+
+  const { closestCoordinate: nextPoint } =
+    identifyClosestCoordinateToCoordinate(
+      currentImageCoordinate,
+      boxBoundedPoints
+    );
 
   return nextPoint || nextImageCoordinate;
 };
 
 //need to define an area of acceptable next points
 
-const validArea = (currentImageCoordinate, nextImageCoordinate, offset) => {
+const validArea = (
+  currentImageCoordinate: ICoordinates,
+  nextImageCoordinate: ICoordinates,
+  offset: number
+) => {
   const { x: currentX, y: currentY } = currentImageCoordinate;
   const { x: nextX, y: nextY } = nextImageCoordinate;
 
   const opposite = nextY - currentY;
   const adjacent = nextX - currentX;
+
+  if (opposite === 0) {
+    const BL = { x: currentX - offset, y: currentY };
+    const BR = { x: nextX + offset, y: nextY };
+
+    const TL = { x: BL.x, y: BL.y - offset };
+    const TR = { x: BR.x, y: BR.y - offset };
+
+    const validArea = { TL, TR, BR, BL };
+    return validArea;
+  }
+
+  if (adjacent === 0) {
+    const BL = { x: currentX, y: currentY - offset };
+    const BR = { x: nextX, y: nextY + offset };
+
+    const TL = { x: BL.x + offset, y: BL.y };
+    const TR = { x: BR.x + offset, y: BR.y };
+
+    const validArea = { TL, TR, BR, BL };
+    return validArea;
+  }
 
   const oppositeRadians = getRadiansFromNonHypotenuseSides(opposite, adjacent);
 
@@ -66,7 +131,11 @@ const validArea = (currentImageCoordinate, nextImageCoordinate, offset) => {
   return validArea;
 };
 
-const whatsInTheBox = (pointA, pointB, allPoints) => {
+const whatsInTheBox = (
+  pointA: ICoordinates,
+  pointB: ICoordinates,
+  allPoints: ICoordinates[]
+) => {
   const { x: currentX, y: currentY } = pointA;
   const { x: nextX, y: nextY } = pointB;
 
@@ -80,7 +149,7 @@ const whatsInTheBox = (pointA, pointB, allPoints) => {
     }
 
     return acc;
-  }, []);
+  }, [] as ICoordinates[]);
 
   const coordinatesInYBounds = coordinatesInXBounds.reduce((acc, cur) => {
     const { y: potentialY } = cur;
@@ -93,12 +162,16 @@ const whatsInTheBox = (pointA, pointB, allPoints) => {
     }
 
     return acc;
-  }, []);
+  }, [] as ICoordinates[]);
 
   return coordinatesInYBounds;
 };
 
-const determinePointBetweenParallelPoints = (point, rightPoint, leftPoint) => {
+const determinePointBetweenParallelPoints = (
+  point: ICoordinates,
+  rightPoint: ICoordinates,
+  leftPoint: ICoordinates
+) => {
   const lengthRight = getHypotenuseSideFromSides(
     rightPoint.x - leftPoint.x,
     leftPoint.y - rightPoint.y

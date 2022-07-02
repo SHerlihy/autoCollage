@@ -1,7 +1,10 @@
 import { determineNextPoint } from "./nextPerimeterPoint";
 import { IPointsMap } from "./pointsTypes";
 
-export const determinePerimeterPoints = (allPoints: IPointsMap, offset: number) => {
+export const determinePerimeterPoints = (
+  allPoints: IPointsMap,
+  offset: number
+) => {
   const topPointId = determineTopPointId(allPoints);
   const nextImagePointId = allPoints.get(topPointId)!.nextImgPointId;
 
@@ -12,7 +15,7 @@ export const determinePerimeterPoints = (allPoints: IPointsMap, offset: number) 
     allPoints
   );
 
-  return perimeterPointIds
+  return perimeterPointIds;
 };
 
 const determineRemainingPerimeterPointIds = (
@@ -24,23 +27,47 @@ const determineRemainingPerimeterPointIds = (
   const perimeterPointIds: string[] = [];
   const allOtherPoints = new Map([...allPoints]);
 
-  const setPerimeterPoints = (currentPointId: string, potentialNextPointId: string) => {
+  const setPerimeterPoints = (
+    currentPointId: string,
+    potentialNextPointId: string
+  ) => {
     const currentPointValues = allPoints.get(currentPointId)!;
     const potentialNextPointValues = allPoints.get(potentialNextPointId)!;
 
     allOtherPoints.delete(currentPointId);
 
-    const nextPointId = determineNextPoint(
+    const otherCoordinatesArr = [...allOtherPoints.values()].map(
+      ({ coordinates }) => coordinates
+    );
+    // const otherCoordinatesArr = Object.values(allOtherPoints).map(
+    //   ({ coordinates }) => coordinates
+    // );
+
+    const nextPointCoordinates = determineNextPoint(
       currentPointValues.coordinates,
       potentialNextPointValues.coordinates,
       offset,
-      allOtherPoints
+      otherCoordinatesArr
+    );
+
+    const nextPointId = [...allOtherPoints.entries()].reduce(
+      (acc, [key, { coordinates }]) => {
+        if (
+          coordinates.x === nextPointCoordinates.x &&
+          coordinates.y === nextPointCoordinates.y
+        ) {
+          acc = key;
+        }
+
+        return acc;
+      },
+      startingPointId
     );
 
     // //might have to be careful here but above should run first (should!)
     // allOtherPoints.delete(potentialNextPointId);
 
-    if (nextPointId === startingPointId ) {
+    if (nextPointId === startingPointId) {
       return;
     }
 
@@ -59,16 +86,15 @@ const determineRemainingPerimeterPointIds = (
 };
 
 const determineTopPointId = (points: IPointsMap) => {
-  const topPoint = [...points.entries()].reduce(
-    (topId, [curId, curVal]) => {
-      const topVal = points.get(topId) || null;
+  const topPoint = [...points.entries()].reduce((topId, [curId, curVal]) => {
+    const topVal = points.get(topId) || null;
 
-      if (topVal === null || curVal.coordinates.y < topVal.coordinates.y) {
-        topId = curId;
-      }
+    if (topVal === null || curVal.coordinates.y < topVal.coordinates.y) {
+      topId = curId;
+    }
 
-      return topId;
-    }, '');
+    return topId;
+  }, "");
 
   return topPoint;
 };

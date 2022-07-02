@@ -1,9 +1,9 @@
 const path = require("path");
 
-const creviceFile = "src/addImages/fillCrevices.test.ts";
+const testFile = "src/addImages/generateEdgesMap.test.ts";
 
 module.exports = {
-  entry: { fillCrevices: `./${creviceFile}` },
+  entry: { fillCrevices: `./${testFile}` },
   devtool: "eval-source-map",
   output: {
     filename: "tests/[name].js",

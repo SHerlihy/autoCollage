@@ -62,10 +62,10 @@ describe("fillCrevices", () => {
 
       edgesArr.push(lastEdge);
 
-      cy.stub(generateEdgesMapModule, "generateEdgesMap").callsFake(() => {
-        console.log("fake called");
-        return new Map(edgesArr);
-      });
+      // cy.stub(generateEdgesMapModule, "generateEdgesMap").callsFake(() => {
+      //   console.log("fake called");
+      //   return new Map(edgesArr);
+      // });
 
       return {
         imgPerimeter,

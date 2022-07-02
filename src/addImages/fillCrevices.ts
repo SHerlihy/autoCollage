@@ -18,7 +18,10 @@ export const fillCrevices = (
   const preCreviceEdgeIds = new Set<string>();
 
   for (const [key, edge] of agglomeratedImgEdges) {
-    if (edge.type.from !== "crevice" && edge.type.to === "crevice") {
+    if (
+      edge.points.from.type !== "crevice" &&
+      edge.points.to.type === "crevice"
+    ) {
       preCreviceEdgeIds.add(key);
     }
   }
