@@ -1,6 +1,5 @@
-import { ICoordinates, IPoint, IPointsMap } from "../perimeter/pointsTypes";
+import { ICoordinates, IPoint } from "../perimeter/pointsTypes";
 import { fillCrevices } from "./fillCrevices";
-import * as generateEdgesMapModule from "./generateEdgesMap";
 
 describe("fillCrevices", () => {
   describe("single fillable crevice", () => {
@@ -15,8 +14,7 @@ describe("fillCrevices", () => {
     ];
     const setupSingleCreviceTest = (
       imgId: string,
-      pointCoordinates: ICoordinates[],
-      preCreviceIndexes: number[]
+      pointCoordinates: ICoordinates[]
     ) => {
       const imgPerimeter = imgPerimeterFromOrderedArr(imgId, pointCoordinates);
 
@@ -36,48 +34,15 @@ describe("fillCrevices", () => {
         coordinates: lastPoint!.coordinates,
       } as IPoint);
 
-      const edgesArr = pointsArr.map((point, index, arr) => {
-        const toCrevice = preCreviceIndexes.some((cIdx) => cIdx === index)
-          ? "crevice"
-          : "right";
-        return [
-          `${index}`,
-          {
-            points: {
-              from: point,
-              to: arr[index + 1],
-            },
-            nextEdge: `${index + 1}`,
-            type: {
-              from: "right",
-              to: toCrevice,
-            },
-          },
-        ] as readonly [string, generateEdgesMapModule.IEdge];
-      });
-
-      const lastEdge = edgesArr.pop()!;
-
-      lastEdge[1].points.to = pointsArr[0];
-
-      edgesArr.push(lastEdge);
-
-      // cy.stub(generateEdgesMapModule, "generateEdgesMap").callsFake(() => {
-      //   console.log("fake called");
-      //   return new Map(edgesArr);
-      // });
-
       return {
         imgPerimeter,
       };
     };
 
-    it.only("returns image perimeter without crevice bottom coordinate", () => {
-      debugger;
+    it("returns image perimeter without crevice bottom coordinate", () => {
       const { imgPerimeter } = setupSingleCreviceTest(
         "001",
-        rectangleTopCreviceCoordinates,
-        [0]
+        rectangleTopCreviceCoordinates
       );
 
       const filledImgPerimeter = fillCrevices(imgPerimeter, 1);
@@ -93,8 +58,7 @@ describe("fillCrevices", () => {
     it("returns image perimeter with points between crevice top coordinates", () => {
       const { imgPerimeter } = setupSingleCreviceTest(
         "001",
-        rectangleTopCreviceCoordinates,
-        [1]
+        rectangleTopCreviceCoordinates
       );
 
       const filledImgPerimeter = fillCrevices(imgPerimeter, 1);
@@ -104,7 +68,7 @@ describe("fillCrevices", () => {
           const { x, y } = point.coordinates;
 
           const inXBounds = 10 < x && x < 14;
-          const inYBounds = 5 < y && y < 110;
+          const inYBounds = 4 < y && y < 6;
 
           if (inXBounds && inYBounds) {
             acc++;
@@ -116,7 +80,7 @@ describe("fillCrevices", () => {
       );
 
       //but wont happen if crevice cant meet min width
-      expect(pointsBetweenCreviceTops).to.be.greaterThan(1);
+      expect(pointsBetweenCreviceTops).to.equal(2);
     });
   });
 });

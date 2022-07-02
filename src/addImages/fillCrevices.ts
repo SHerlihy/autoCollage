@@ -13,66 +13,77 @@ export const fillCrevices = (
   agglomeratedImgPerimeter: Map<string, IPoint>,
   clearanceWidth: number
 ): Map<string, IPoint> => {
-  const agglomeratedImgEdges = generateEdgesMap(agglomeratedImgPerimeter);
+  let filledPerimeter: Map<string, IPoint>;
 
-  const preCreviceEdgeIds = new Set<string>();
+  const fillNextCrevice = (latestImgPerimeter: Map<string, IPoint>) => {
+    const agglomeratedImgEdges = generateEdgesMap(latestImgPerimeter);
 
-  for (const [key, edge] of agglomeratedImgEdges) {
-    if (
-      edge.points.from.type !== "crevice" &&
-      edge.points.to.type === "crevice"
-    ) {
-      preCreviceEdgeIds.add(key);
+    const preCreviceEdgeIds = new Set<string>();
+
+    for (const [key, edge] of agglomeratedImgEdges) {
+      if (
+        edge.points.from.type !== "crevice" &&
+        edge.points.to.type === "crevice"
+      ) {
+        preCreviceEdgeIds.add(key);
+      }
     }
-  }
 
-  const coordinatesOfCrevices: {
-    topLeft: ICoordinates;
-    bottom: ICoordinates;
-    topRight: ICoordinates;
-  }[] = [];
+    const coordinatesOfCrevices: {
+      topLeft: ICoordinates;
+      bottom: ICoordinates;
+      topRight: ICoordinates;
+    }[] = [];
 
-  for (const preCreviceId of preCreviceEdgeIds) {
-    const preCreviceEdge = agglomeratedImgEdges.get(preCreviceId);
-    const leftCreviceEdge = agglomeratedImgEdges.get(preCreviceEdge!.nextEdge);
-    const rightCreviceEdge = agglomeratedImgEdges.get(
-      leftCreviceEdge!.nextEdge
-    );
+    for (const preCreviceId of preCreviceEdgeIds) {
+      const preCreviceEdge = agglomeratedImgEdges.get(preCreviceId);
+      const leftCreviceEdge = agglomeratedImgEdges.get(
+        preCreviceEdge!.nextEdge
+      );
+      const rightCreviceEdge = agglomeratedImgEdges.get(
+        leftCreviceEdge!.nextEdge
+      );
 
-    const topLeft = leftCreviceEdge!.points.from.coordinates;
-    const bottom = leftCreviceEdge!.points.to.coordinates;
-    const topRight = rightCreviceEdge!.points.to.coordinates;
+      const topLeft = leftCreviceEdge!.points.from.coordinates;
+      const bottom = leftCreviceEdge!.points.to.coordinates;
+      const topRight = rightCreviceEdge!.points.to.coordinates;
 
-    coordinatesOfCrevices.push({
-      topLeft,
-      bottom,
-      topRight,
-    });
-  }
-
-  const clearanceAreas = coordinatesOfCrevices.map(
-    ({ topLeft, bottom, topRight }) => {
-      return determineCreviceClearanceArea(
+      coordinatesOfCrevices.push({
         topLeft,
         bottom,
         topRight,
-        clearanceWidth
-      );
+      });
     }
-  );
 
-  const definedClearanceAreas = removeUndefinedArrElements(clearanceAreas);
+    const clearanceAreas = coordinatesOfCrevices.map(
+      ({ topLeft, bottom, topRight }) => {
+        return determineCreviceClearanceArea(
+          topLeft,
+          bottom,
+          topRight,
+          clearanceWidth
+        );
+      }
+    );
 
-  if (definedClearanceAreas[0] !== undefined) {
-    const newPerimeter = addClearanceAreasToPerimeter(
-      agglomeratedImgPerimeter,
+    const definedClearanceAreas = removeUndefinedArrElements(clearanceAreas);
+
+    if (definedClearanceAreas[0] === undefined) {
+      return;
+    }
+
+    filledPerimeter = addClearanceAreasToPerimeter(
+      latestImgPerimeter,
       definedClearanceAreas as IClearanceArea[]
     );
 
-    fillCrevices(newPerimeter, clearanceWidth);
-  }
+    fillNextCrevice(filledPerimeter);
+  };
 
-  return agglomeratedImgPerimeter;
+  fillNextCrevice(agglomeratedImgPerimeter);
+
+  // @ts-ignore
+  return filledPerimeter;
 };
 
 const addClearanceAreasToPerimeter = (
@@ -95,13 +106,7 @@ const addClearanceAreasToPerimeter = (
   const allPointsMap = addMapsToMap(perimeter, clearanceImgPointsMapsArr);
 
   // Coordinates to image perimeter
-  const newPerimeterPointIds = determinePerimeterPoints(allPointsMap, 3);
+  const newPerimeterPoints = determinePerimeterPoints(allPointsMap, 3);
 
-  const newPerimeterPointsArr = newPerimeterPointIds.map((id) => {
-    const point = allPointsMap.get(id)!;
-
-    return [id, point] as readonly [string, IPoint];
-  });
-
-  return new Map(newPerimeterPointsArr);
+  return newPerimeterPoints;
 };
