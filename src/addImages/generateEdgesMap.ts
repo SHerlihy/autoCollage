@@ -161,28 +161,62 @@ const determineIsCrevice = (
   endPoint: IPoint,
   nextPoint: IPoint
 ) => {
-  const startSide = determinePointSideOfLine(prevPoint, nextPoint, startPoint);
-  const endSide = determinePointSideOfLine(prevPoint, nextPoint, endPoint);
+  const startSide = isPointOutside(prevPoint, nextPoint, startPoint);
+  const endSide = isPointOutside(prevPoint, nextPoint, endPoint);
 
-  // negative is outside
-  if (startSide > 0 || endSide > 0) {
+  if (!startSide || !endSide) {
     return true;
   }
 
   return false;
 };
 
-const determinePointSideOfLine = (
-  lineStart: IPoint,
-  lineEnd: IPoint,
-  point: IPoint
-) => {
-  const resolveX =
-    (lineStart.coordinates.x - point.coordinates.x) *
-    (lineEnd.coordinates.y - point.coordinates.y);
-  const resolveY =
-    (lineStart.coordinates.y - point.coordinates.y) *
-    (lineEnd.coordinates.x - point.coordinates.x);
+const isPointOutside = (lineStart: IPoint, lineEnd: IPoint, point: IPoint) => {
+  const goingDown = lineStart.coordinates.y < lineEnd.coordinates.y;
+  const goingRight = lineStart.coordinates.x < lineEnd.coordinates.x;
 
-  return resolveX - resolveY;
+  if (lineEnd.coordinates.x === lineStart.coordinates.x) {
+    if (point.coordinates.x === lineStart.coordinates.x) {
+      return true;
+    }
+    if (goingDown) {
+      return point.coordinates.x > lineStart.coordinates.x;
+    } else {
+      return point.coordinates.x < lineStart.coordinates.x;
+    }
+  }
+
+  if (lineEnd.coordinates.y === lineStart.coordinates.y) {
+    if (point.coordinates.y === lineStart.coordinates.y) {
+      return true;
+    }
+    if (goingRight) {
+      return point.coordinates.y < lineStart.coordinates.y;
+    } else {
+      return point.coordinates.y > lineStart.coordinates.y;
+    }
+  }
+
+  const lineGrad =
+    (lineEnd.coordinates.y - lineStart.coordinates.y) /
+    (lineEnd.coordinates.x - lineStart.coordinates.x);
+  const toPointGrad =
+    (point.coordinates.y - lineStart.coordinates.y) /
+    (point.coordinates.x - lineStart.coordinates.x);
+
+  if (goingDown && goingRight) {
+    return toPointGrad < lineGrad;
+  }
+
+  if (goingDown && !goingRight) {
+    return toPointGrad > lineGrad;
+  }
+
+  if (!goingDown && !goingRight) {
+    return toPointGrad > lineGrad;
+  }
+
+  if (!goingDown && goingRight) {
+    return toPointGrad < lineGrad;
+  }
 };
