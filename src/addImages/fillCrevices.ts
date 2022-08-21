@@ -3,11 +3,17 @@ import { imgPointsMapFromCoordinates } from "../perimeter/defineAgglomeratedImg"
 import { determinePerimeterPoints } from "../perimeter/determinePerimeter";
 import { addMapsToMap } from "../perimeter/mapHelpers";
 import { ICoordinates, IPoint } from "../perimeter/pointsTypes";
+import { CreateIds } from "./createIds";
 import {
   determineCreviceClearanceArea,
   IClearanceArea,
 } from "./determineCreviceClearanceArea";
 import { generateEdgesMap, IEdge } from "./generateEdgesMap";
+
+interface IClearanceAreaInfo {
+  preCrevicePointId: string;
+  areaCoordinates: IClearanceArea;
+}
 
 export const fillCrevices = (
   agglomeratedImgPerimeter: Map<string, IPoint>,
@@ -18,28 +24,49 @@ export const fillCrevices = (
   const fillNextCrevice = (latestImgPerimeter: Map<string, IPoint>) => {
     const agglomeratedImgEdges = generateEdgesMap(latestImgPerimeter);
 
-    const preCreviceEdgeIds = new Set<string>();
+    let newPerimPoints = new Map() as Map<string, IPoint>;
+
+    for (const [edgeId, newEdge] of agglomeratedImgEdges) {
+      const fromPtId = newEdge.points.from.currentImgPointId;
+      const fromPt = newEdge.points.from;
+
+      newPerimPoints.set(fromPtId, fromPt);
+
+      const toPtId = newEdge.points.to.currentImgPointId;
+      const toPt = newEdge.points.to;
+
+      newPerimPoints.set(toPtId, toPt);
+    }
+
+    const leftCreviceEdgeIds = new Set<string>();
 
     for (const [key, edge] of agglomeratedImgEdges) {
       if (
         edge.points.from.type !== "crevice" &&
         edge.points.to.type === "crevice"
       ) {
-        preCreviceEdgeIds.add(key);
+        leftCreviceEdgeIds.add(key);
+      }
+
+      if (
+        edge.points.from.type === "crevice" &&
+        edge.points.to.type === "crevice"
+      ) {
+        leftCreviceEdgeIds.add(key);
       }
     }
 
     const coordinatesOfCrevices: {
-      topLeft: ICoordinates;
-      bottom: ICoordinates;
-      topRight: ICoordinates;
+      preCrevicePointId: string;
+      coordinates: {
+        topLeft: ICoordinates;
+        bottom: ICoordinates;
+        topRight: ICoordinates;
+      };
     }[] = [];
 
-    for (const preCreviceId of preCreviceEdgeIds) {
-      const preCreviceEdge = agglomeratedImgEdges.get(preCreviceId);
-      const leftCreviceEdge = agglomeratedImgEdges.get(
-        preCreviceEdge!.nextEdge
-      );
+    for (const leftCreviceId of leftCreviceEdgeIds) {
+      const leftCreviceEdge = agglomeratedImgEdges.get(leftCreviceId);
       const rightCreviceEdge = agglomeratedImgEdges.get(
         leftCreviceEdge!.nextEdge
       );
@@ -49,20 +76,33 @@ export const fillCrevices = (
       const topRight = rightCreviceEdge!.points.to.coordinates;
 
       coordinatesOfCrevices.push({
-        topLeft,
-        bottom,
-        topRight,
+        preCrevicePointId: leftCreviceEdge!.points.from.currentImgPointId,
+        coordinates: {
+          topLeft,
+          bottom,
+          topRight,
+        },
       });
     }
 
     const clearanceAreas = coordinatesOfCrevices.map(
-      ({ topLeft, bottom, topRight }) => {
-        return determineCreviceClearanceArea(
+      ({ preCrevicePointId, coordinates }) => {
+        const { topLeft, bottom, topRight } = coordinates;
+        const areas = determineCreviceClearanceArea(
           topLeft,
           bottom,
           topRight,
           clearanceWidth
         );
+
+        if (!areas) return;
+
+        const clearanceAreaInfo = {
+          preCrevicePointId,
+          areaCoordinates: { ...areas },
+        } as IClearanceAreaInfo;
+
+        return clearanceAreaInfo;
       }
     );
 
@@ -72,11 +112,13 @@ export const fillCrevices = (
       return;
     }
 
-    filledPerimeter = addClearanceAreasToPerimeter(
-      latestImgPerimeter,
-      definedClearanceAreas as IClearanceArea[]
+    filledPerimeter = replaceCrevicePointWithClearanceArea(
+      newPerimPoints,
+      definedClearanceAreas
     );
 
+    //first one big success
+    //second one big success
     fillNextCrevice(filledPerimeter);
   };
 
@@ -86,26 +128,71 @@ export const fillCrevices = (
   return filledPerimeter;
 };
 
-const addClearanceAreasToPerimeter = (
+const replaceCrevicePointWithClearanceArea = (
   perimeter: Map<string, IPoint>,
-  clearanceAreas: IClearanceArea[]
+  clearanceAreas: IClearanceAreaInfo[]
 ): Map<string, IPoint> => {
-  const linkedCoordinatesMap = new Map<string, string>([
-    ["tl", "tr"],
-    ["tr", "br"],
-    ["br", "bl"],
-    ["bl", "tl"],
-  ]);
-  const clearanceImgPointsMapsArr = clearanceAreas.map((coordinates) => {
-    const coordinatesMap = new Map(Object.entries(coordinates));
+  // ends up just duplicating last ones
+  const clearanceImgPointsMapsArr = clearanceAreas.map(
+    ({ preCrevicePointId, areaCoordinates }) => {
+      const tlKey = CreateIds.getInstance().generateNovelId();
+      const trKey = CreateIds.getInstance().generateNovelId();
+      const brKey = CreateIds.getInstance().generateNovelId();
+      const blKey = CreateIds.getInstance().generateNovelId();
 
-    return imgPointsMapFromCoordinates(linkedCoordinatesMap, coordinatesMap);
-  });
+      const linkedCoordinatesMap = new Map<string, string>([
+        [tlKey, trKey],
+        [trKey, brKey],
+        [brKey, blKey],
+        [blKey, tlKey],
+      ]);
+
+      const coordinatesMap = new Map();
+
+      for (const [areaKey, areaCoordinate] of Object.entries(areaCoordinates)) {
+        let newKey;
+
+        switch (areaKey) {
+          case "tl":
+            newKey = tlKey;
+            break;
+          case "tr":
+            newKey = trKey;
+            break;
+          case "br":
+            newKey = brKey;
+            break;
+          case "bl":
+            newKey = blKey;
+            break;
+          default:
+            break;
+        }
+        coordinatesMap.set(newKey, areaCoordinate);
+      }
+
+      const arr = imgPointsMapFromCoordinates(
+        linkedCoordinatesMap,
+        coordinatesMap
+      );
+
+      const preCrevicePoint = perimeter.get(preCrevicePointId)!;
+      const crevicePointId = preCrevicePoint.nextImgPointId;
+      const postCrevicePointId = perimeter.get(crevicePointId)!.nextImgPointId;
+
+      const brPoint = arr.get(brKey)!;
+
+      preCrevicePoint.nextImgPointId = blKey;
+      brPoint.nextImgPointId = postCrevicePointId;
+      // perimeter.delete(crevicePointId);
+
+      return arr;
+    }
+  );
   // Coordinates to points
 
   const allPointsMap = addMapsToMap(perimeter, clearanceImgPointsMapsArr);
 
-  // Coordinates to image perimeter
   const newPerimeterPoints = determinePerimeterPoints(allPointsMap, 3);
 
   return newPerimeterPoints;

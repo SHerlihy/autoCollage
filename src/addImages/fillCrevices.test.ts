@@ -126,7 +126,7 @@ describe("fillCrevices", () => {
       { x: 5, y: 40 },
     ];
 
-    it.only("returns image perimeter without crevice bottom coordinates", () => {
+    it("returns image perimeter without crevice bottom coordinates", () => {
       const { imgPerimeter } = createImgPerimeterFromOrderedCoordinates(
         "002",
         rectangleCreviceCloseToEdge
@@ -205,6 +205,7 @@ const imgPerimeterFromOrderedArr = (
       `${idx}`,
       {
         imgId,
+        currentImgPointId: `${idx}`,
         nextImgPointId: `${idx + 1}`,
         coordinates: coordinate,
       },
@@ -216,6 +217,7 @@ const imgPerimeterFromOrderedArr = (
     `${pointCoordinates.length - 1}`,
     {
       imgId,
+      currentImgPointId: `${pointCoordinates.length - 1}`,
       nextImgPointId: `${0}`,
       coordinates: pointCoordinates[pointCoordinates.length - 1],
     },

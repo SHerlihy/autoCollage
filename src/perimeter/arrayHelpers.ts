@@ -5,5 +5,5 @@ export const removeUndefinedArrElements = <T>(arr: Array<T | undefined>) => {
     return [];
   }
 
-  return definedArr;
+  return definedArr as T[];
 };

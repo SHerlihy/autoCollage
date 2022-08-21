@@ -1,4 +1,4 @@
-import { IPoint, IPointsMap } from "../perimeter/pointsTypes";
+import { ICoordinates, IPoint, IPointsMap } from "../perimeter/pointsTypes";
 import {
   radiansFromCoordinates,
   radiansToDegrees,
@@ -46,37 +46,76 @@ export const generateEdgesMap = (perimeterPoints: IPointsMap): IEdgesMap => {
 
 const determinePointTypes = (pointsMap: IPointsMap) => {
   const typedPointsMap = new Map<string, ITypedPoint>();
+  const creviceIds = new Array<string>();
 
-  for (const [key, point] of pointsMap) {
+  const [initKey, initPoint] = [...pointsMap.entries()][0];
+
+  const doTheThing = (key: string, point: IPoint): string => {
     const prevPoint = point;
     const fromPoint = pointsMap.get(prevPoint.nextImgPointId)!;
     const toPoint = pointsMap.get(fromPoint.nextImgPointId)!;
-    const nextPoint = pointsMap.get(toPoint.nextImgPointId)!;
 
-    const isCrevice = determineIsCrevice(
-      prevPoint,
-      fromPoint,
-      toPoint,
-      nextPoint
-    );
+    if (creviceIds.some((crevId) => crevId === key)) {
+      return prevPoint.nextImgPointId;
+    }
 
-    const typedPoint: Partial<ITypedPoint> & Omit<ITypedPoint, "type"> = {
-      ...fromPoint,
-    };
-
-    if (isCrevice) {
-      typedPoint["type"] = "crevice";
-      typedPointsMap.set(prevPoint.nextImgPointId, typedPoint as ITypedPoint);
-    } else {
-      const angleType = determineEdgeAnglesFromPoints(
-        prevPoint,
-        fromPoint,
-        toPoint
+    const handlePotentialCrevice = (
+      prevPoint: IPoint,
+      fromPoint: IPoint,
+      toPoint: IPoint,
+      theId?: string
+    ): string => {
+      const isCrevice = !isCoordinateOutside(
+        prevPoint.coordinates,
+        toPoint.coordinates,
+        fromPoint.coordinates,
+        20
       );
 
-      typedPoint["type"] = angleType;
-      typedPointsMap.set(prevPoint.nextImgPointId, typedPoint as ITypedPoint);
-    }
+      const typedPoint: Partial<ITypedPoint> & Omit<ITypedPoint, "type"> = {
+        ...fromPoint,
+      };
+
+      if (isCrevice) {
+        typedPoint["type"] = "crevice";
+        typedPointsMap.set(
+          theId || prevPoint.nextImgPointId,
+          typedPoint as ITypedPoint
+        );
+        creviceIds.push(theId || prevPoint.nextImgPointId);
+
+        return handlePotentialCrevice(
+          prevPoint,
+          toPoint,
+          pointsMap.get(toPoint.nextImgPointId)!,
+          fromPoint.nextImgPointId
+        );
+      } else {
+        const angleType = determineEdgeAnglesFromPoints(
+          prevPoint,
+          fromPoint,
+          toPoint
+        );
+
+        typedPoint["type"] = angleType;
+        typedPointsMap.set(
+          theId || prevPoint.nextImgPointId,
+          typedPoint as ITypedPoint
+        );
+        return prevPoint.nextImgPointId;
+      }
+    };
+
+    const newPoint = handlePotentialCrevice(prevPoint, fromPoint, toPoint);
+
+    return newPoint;
+  };
+
+  let thingPoint = doTheThing(initKey, initPoint)!;
+
+  while (thingPoint !== initKey) {
+    const thingValue = pointsMap.get(thingPoint)!;
+    thingPoint = doTheThing(thingPoint, thingValue)!;
   }
 
   return typedPointsMap;
@@ -155,68 +194,205 @@ const determineEdgeAnglesFromPoints = (
   return fromType;
 };
 
-const determineIsCrevice = (
-  prevPoint: IPoint,
-  startPoint: IPoint,
-  endPoint: IPoint,
-  nextPoint: IPoint
+export const isCoordinateOutside = (
+  lineStart: ICoordinates,
+  lineEnd: ICoordinates,
+  subjectCoordinate: ICoordinates,
+  creviceThreshold: number
 ) => {
-  const startSide = isPointOutside(prevPoint, nextPoint, startPoint);
-  const endSide = isPointOutside(prevPoint, nextPoint, endPoint);
+  const directionalOutside = isDirectionalOutside(
+    lineStart,
+    lineEnd,
+    subjectCoordinate
+  );
 
-  if (!startSide || !endSide) {
+  if (directionalOutside !== null) {
+    return directionalOutside;
+  }
+
+  const gradientOutside = isGradientOutside(
+    lineStart,
+    lineEnd,
+    subjectCoordinate,
+    creviceThreshold
+  );
+
+  return gradientOutside;
+};
+
+const isGradientOutside = (
+  lineStart: ICoordinates,
+  lineEnd: ICoordinates,
+  subjectCoordinate: ICoordinates,
+  creviceThreshold: number
+) => {
+  // Hav to have the same for toPoint?
+  const { yDirection, xDirection } = lineDirection(lineStart, lineEnd);
+  const { yDirection: yToPointDirection, xDirection: xToPointDirection } =
+    lineDirection(lineStart, subjectCoordinate);
+
+  if (yDirection === "down" && xDirection === "right") {
+    if (yToPointDirection === "up" && xToPointDirection === "right") {
+      return true;
+    }
+    if (yToPointDirection === "down" && xToPointDirection === "left") {
+      return false;
+    }
+  }
+
+  if (yDirection === "down" && xDirection === "left") {
+    if (yToPointDirection === "down" && xToPointDirection === "right") {
+      return true;
+    }
+    if (yToPointDirection === "up" && xToPointDirection === "left") {
+      return false;
+    }
+  }
+
+  if (yDirection === "up" && xDirection === "left") {
+    if (yToPointDirection === "down" && xToPointDirection === "left") {
+      return true;
+    }
+    if (yToPointDirection === "up" && xToPointDirection === "right") {
+      return false;
+    }
+  }
+
+  if (yDirection === "up" && xDirection === "right") {
+    if (yToPointDirection === "up" && xToPointDirection === "left") {
+      return true;
+    }
+    if (yToPointDirection === "down" && xToPointDirection === "right") {
+      false;
+    }
+  }
+
+  const lineGrad = (lineEnd.y - lineStart.y) / (lineEnd.x - lineStart.x);
+  const toPointGrad =
+    (subjectCoordinate.y - lineStart.y) / (subjectCoordinate.x - lineStart.x);
+
+  const yComparison = lineGrad * 50 - toPointGrad * 50;
+
+  if (Math.abs(yComparison) < creviceThreshold) {
     return true;
   }
 
-  return false;
+  if (yDirection === "down" && xDirection === "right") {
+    if (yToPointDirection === "down" && xToPointDirection === "right") {
+      return toPointGrad < lineGrad;
+    }
+    if (yToPointDirection === "up" && xToPointDirection === "left") {
+      return toPointGrad > lineGrad;
+    }
+  }
+
+  if (yDirection === "down" && xDirection === "left") {
+    if (yToPointDirection === "down" && xToPointDirection === "left") {
+      return toPointGrad > lineGrad;
+    }
+    if (yToPointDirection === "up" && xToPointDirection === "right") {
+      return toPointGrad < lineGrad;
+    }
+  }
+
+  if (yDirection === "up" && xDirection === "left") {
+    if (yToPointDirection === "up" && xToPointDirection === "left") {
+      return toPointGrad < lineGrad;
+    }
+    if (yToPointDirection === "down" && xToPointDirection === "right") {
+      return toPointGrad > lineGrad;
+    }
+  }
+
+  if (yDirection === "up" && xDirection === "right") {
+    if (yToPointDirection === "up" && xToPointDirection === "right") {
+      return toPointGrad < lineGrad;
+    }
+    if (yToPointDirection === "down" && xToPointDirection === "left") {
+      return toPointGrad > lineGrad;
+    }
+  }
 };
 
-const isPointOutside = (lineStart: IPoint, lineEnd: IPoint, point: IPoint) => {
-  const goingDown = lineStart.coordinates.y < lineEnd.coordinates.y;
-  const goingRight = lineStart.coordinates.x < lineEnd.coordinates.x;
+const isDirectionalOutside = (
+  lineStart: ICoordinates,
+  lineEnd: ICoordinates,
+  subjectCoordinate: ICoordinates
+) => {
+  const { yDirection: yDirectionBase, xDirection: xDirectionBase } =
+    lineDirection(lineStart, lineEnd);
 
-  if (lineEnd.coordinates.x === lineStart.coordinates.x) {
-    if (point.coordinates.x === lineStart.coordinates.x) {
+  const { yDirection: yDirectionPoint, xDirection: xDirectionPoint } =
+    lineDirection(lineStart, subjectCoordinate);
+
+  if (xDirectionBase === "vertical") {
+    if (xDirectionPoint === "vertical") {
       return true;
     }
-    if (goingDown) {
-      return point.coordinates.x > lineStart.coordinates.x;
+    if (yDirectionBase === "down") {
+      return subjectCoordinate.x > lineStart.x;
     } else {
-      return point.coordinates.x < lineStart.coordinates.x;
+      return subjectCoordinate.x < lineStart.x;
     }
   }
 
-  if (lineEnd.coordinates.y === lineStart.coordinates.y) {
-    if (point.coordinates.y === lineStart.coordinates.y) {
+  if (yDirectionBase === "horizontal") {
+    if (yDirectionPoint === "horizontal") {
       return true;
     }
-    if (goingRight) {
-      return point.coordinates.y < lineStart.coordinates.y;
+    if (xDirectionBase === "right") {
+      return subjectCoordinate.y < lineStart.y;
     } else {
-      return point.coordinates.y > lineStart.coordinates.y;
+      return subjectCoordinate.y > lineStart.y;
     }
   }
 
+  if (xDirectionPoint === "vertical") {
+    if (xDirectionBase === "left") {
+      return subjectCoordinate.y > lineStart.y;
+    } else {
+      return subjectCoordinate.y < lineStart.y;
+    }
+  }
+
+  if (yDirectionPoint === "horizontal") {
+    if (yDirectionBase === "down") {
+      return subjectCoordinate.x > lineStart.x;
+    } else {
+      return subjectCoordinate.x < lineStart.x;
+    }
+  }
+
+  return null;
+};
+
+export const lineDirection = (
+  lineStartCoordinates: ICoordinates,
+  lineEndCoordinates: ICoordinates
+) => {
+  const horizontal = lineStartCoordinates.y === lineEndCoordinates.y;
+  const vertical = lineStartCoordinates.x === lineEndCoordinates.x;
+
+  const goingDown =
+    lineStartCoordinates.y < lineEndCoordinates.y ? "down" : "up";
+  const goingRight =
+    lineStartCoordinates.x < lineEndCoordinates.x ? "right" : "left";
+
+  return {
+    yDirection: horizontal ? "horizontal" : goingDown,
+    xDirection: vertical ? "vertical" : goingRight,
+  };
+};
+
+const lineGradient = (
+  lineStartCoordinates: ICoordinates,
+  lineEndCoordinates: ICoordinates,
+  pointCoordinates: ICoordinates
+) => {
   const lineGrad =
-    (lineEnd.coordinates.y - lineStart.coordinates.y) /
-    (lineEnd.coordinates.x - lineStart.coordinates.x);
+    (lineEndCoordinates.y - lineStartCoordinates.y) /
+    (lineEndCoordinates.x - lineStartCoordinates.x);
   const toPointGrad =
-    (point.coordinates.y - lineStart.coordinates.y) /
-    (point.coordinates.x - lineStart.coordinates.x);
-
-  if (goingDown && goingRight) {
-    return toPointGrad < lineGrad;
-  }
-
-  if (goingDown && !goingRight) {
-    return toPointGrad > lineGrad;
-  }
-
-  if (!goingDown && !goingRight) {
-    return toPointGrad > lineGrad;
-  }
-
-  if (!goingDown && goingRight) {
-    return toPointGrad < lineGrad;
-  }
+    (pointCoordinates.y - lineStartCoordinates.y) /
+    (pointCoordinates.x - lineStartCoordinates.x);
 };

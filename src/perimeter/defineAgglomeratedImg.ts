@@ -39,6 +39,7 @@ export const imgPointsMapFromCoordinates = (
 
     const currentImgPoint = {
       imgId,
+      currentImgPointId: curId,
       nextImgPointId: nextId,
       coordinates,
     };

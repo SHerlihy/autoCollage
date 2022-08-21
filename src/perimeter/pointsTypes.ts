@@ -5,6 +5,7 @@ export interface ICoordinates {
 
 export interface IPoint {
   imgId: string;
+  currentImgPointId: string;
   nextImgPointId: string;
   coordinates: ICoordinates;
 }

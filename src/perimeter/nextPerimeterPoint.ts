@@ -1,3 +1,7 @@
+import {
+  isCoordinateOutside,
+  lineDirection,
+} from "../addImages/generateEdgesMap";
 import { ICoordinates } from "./pointsTypes";
 import {
   getRadiansFromSides,
@@ -13,16 +17,25 @@ export const determineNextPoint = (
   offset: number,
   allOtherPoints: ICoordinates[]
 ) => {
-  const { TL, TR, BR, BL } = validArea(
+  const thresholdArea = validArea(
     currentImageCoordinate,
     nextImageCoordinate,
-    offset
+    5
   );
 
-  const boxBoundedPoints = whatsInTheBox(
+  const { TL, TR, BR, BL } = thresholdArea;
+
+  // using this simpler algorithm reduce number of coordinates
+  // going into next more complex algorithm
+  const boxBoundedCoordinates = whatsInTheBox(
     { x: BL.x, y: TL.y },
     { x: TR.x, y: BR.y },
     allOtherPoints
+  );
+
+  const areaBoundedCoordinates = identifyCoordinatesWithinBounds(
+    Object.values(thresholdArea),
+    boxBoundedCoordinates
   );
 
   const identifyClosestCoordinateToCoordinate = (
@@ -57,22 +70,27 @@ export const determineNextPoint = (
     return closestCoordinate;
   };
 
-  // const ascendingY = boxBoundedPoints.sort(({ y: aY }, { y: bY }) => {
-  //   return aY - bY;
-  // });
-
-  // const nextPoint = ascendingY.find((point) => {
-  //   const inDepth = determinePointBetweenParallelPoints(point, BR, TR);
-  //   const inBreadth = determinePointBetweenParallelPoints(point, BL, BR);
-
-  //   return inDepth && inBreadth;
-  // });
+  const { closestCoordinate: nextBoxPoint } =
+    identifyClosestCoordinateToCoordinate(currentImageCoordinate, [
+      ...boxBoundedCoordinates,
+      nextImageCoordinate,
+    ]);
 
   const { closestCoordinate: nextPoint } =
-    identifyClosestCoordinateToCoordinate(
-      currentImageCoordinate,
-      boxBoundedPoints
-    );
+    identifyClosestCoordinateToCoordinate(currentImageCoordinate, [
+      ...areaBoundedCoordinates,
+      nextImageCoordinate,
+    ]);
+
+  if (nextBoxPoint.x !== nextPoint.x) {
+    console.log(nextBoxPoint);
+    console.log(nextPoint);
+  }
+
+  if (nextBoxPoint.y !== nextPoint.y) {
+    console.log(nextBoxPoint);
+    console.log(nextPoint);
+  }
 
   return nextPoint || nextImageCoordinate;
 };
@@ -84,14 +102,110 @@ const validArea = (
   nextImageCoordinate: ICoordinates,
   offset: number
 ) => {
+  const { yDirection, xDirection } = lineDirection(
+    currentImageCoordinate,
+    nextImageCoordinate
+  );
+
+  if (yDirection === "horizontal") {
+    return validAreaOnAxisLine(
+      currentImageCoordinate,
+      nextImageCoordinate,
+      offset,
+      xDirection
+    );
+  }
+
+  if (xDirection === "vertical") {
+    return validAreaOnAxisLine(
+      currentImageCoordinate,
+      nextImageCoordinate,
+      offset,
+      yDirection
+    );
+  }
+
   const { x: currentX, y: currentY } = currentImageCoordinate;
   const { x: nextX, y: nextY } = nextImageCoordinate;
 
   const opposite = nextY - currentY;
   const adjacent = nextX - currentX;
 
-  if (opposite === 0) {
-    const BL = { x: currentX - offset, y: currentY };
+  // Need directionality
+
+  const oppositeRadians = getRadiansFromNonHypotenuseSides(
+    Math.abs(opposite),
+    Math.abs(adjacent)
+  );
+
+  const hyp = Math.abs(offset);
+
+  const xLength = SOHOppositeSideFromRadians(hyp, oppositeRadians);
+
+  const yLength = getNonHypotenuseSideFromSides(hyp, xLength);
+
+  const BL = { x: currentX, y: currentY };
+
+  let BRx, BRy, TRx, TRy, TLx, TLy;
+
+  if (xDirection === "right") {
+    BRx = nextX + xLength;
+    if (yDirection === "down") {
+      BRy = nextY + yLength;
+
+      TRx = BRx + yLength;
+      TRy = BRy - xLength;
+
+      TLx = BL.x + yLength;
+      TLy = BL.y - xLength;
+    } else {
+      BRy = nextY - yLength;
+
+      TRx = BRx - yLength;
+      TRy = BRy - xLength;
+
+      TLx = BL.x - yLength;
+      TLy = BL.y - xLength;
+    }
+  } else {
+    BRx = nextX - xLength;
+    if (yDirection === "down") {
+      BRy = nextY + yLength;
+
+      TRx = BRx + yLength;
+      TRy = BRy + xLength;
+
+      TLx = BL.x + yLength;
+      TLy = BL.y + xLength;
+    } else {
+      BRy = nextY - yLength;
+
+      TRx = BRx - yLength;
+      TRy = BRy + xLength;
+
+      TLx = BL.x - yLength;
+      TLy = BL.y + xLength;
+    }
+  }
+
+  const BR = { x: BRx, y: BRy };
+
+  const TL = { x: TLx, y: TLy };
+  const TR = { x: TRx, y: TRy };
+
+  const validArea = { TL, TR, BR, BL };
+
+  return validArea;
+};
+
+const validAreaOnAxisLine = (
+  { x: currentX, y: currentY }: ICoordinates,
+  { x: nextX, y: nextY }: ICoordinates,
+  offset: number,
+  direction: string
+) => {
+  if (direction === "right") {
+    const BL = { x: currentX, y: currentY };
     const BR = { x: nextX + offset, y: nextY };
 
     const TL = { x: BL.x, y: BL.y - offset };
@@ -100,9 +214,19 @@ const validArea = (
     const validArea = { TL, TR, BR, BL };
     return validArea;
   }
+  if (direction === "left") {
+    const BL = { x: currentX, y: currentY };
+    const BR = { x: nextX - offset, y: nextY };
 
-  if (adjacent === 0) {
-    const BL = { x: currentX, y: currentY - offset };
+    const TL = { x: BL.x, y: BL.y + offset };
+    const TR = { x: BR.x, y: BR.y + offset };
+
+    const validArea = { TL, TR, BR, BL };
+    return validArea;
+  }
+
+  if (direction === "down") {
+    const BL = { x: currentX, y: currentY };
     const BR = { x: nextX, y: nextY + offset };
 
     const TL = { x: BL.x + offset, y: BL.y };
@@ -112,23 +236,143 @@ const validArea = (
     return validArea;
   }
 
-  const oppositeRadians = getRadiansFromNonHypotenuseSides(opposite, adjacent);
+  if (direction === "up") {
+    const BL = { x: currentX, y: currentY };
+    const BR = { x: nextX, y: nextY - offset };
 
-  const hyp = Math.abs(offset);
+    const TL = { x: BL.x - offset, y: BL.y };
+    const TR = { x: BR.x - offset, y: BR.y };
 
-  const xLength = SOHOppositeSideFromRadians(hyp, oppositeRadians);
+    const validArea = { TL, TR, BR, BL };
+    return validArea;
+  }
 
-  const yLength = getNonHypotenuseSideFromSides(hyp, xLength);
+  throw new Error("Incorrect direction given");
+};
 
-  const BL = { x: currentX - xLength, y: currentY - yLength };
-  const BR = { x: nextX + xLength, y: nextY + yLength };
+const identifyCoordinatesWithinBounds = (
+  bounds: ICoordinates[],
+  allCoordinates: ICoordinates[]
+) => {
+  let potentialCoordinatesArr = [...allCoordinates];
 
-  const TL = { x: BL.x + yLength, y: BL.y - xLength };
-  const TR = { x: BR.x + yLength, y: BR.y - xLength };
+  bounds.forEach((startCoordinate, idx, arr) => {
+    const endCoordinate = idx === arr.length - 1 ? arr[0] : arr[idx + 1];
 
-  const validArea = { TL, TR, BR, BL };
+    const planeEdge =
+      startCoordinate.x === endCoordinate.x
+        ? "y"
+        : startCoordinate.y === endCoordinate.y
+        ? "x"
+        : null;
 
-  return validArea;
+    if (planeEdge) {
+      const planePotentialCoordiantes =
+        determinePotentialCoordinatesFromPlaneEdge(
+          potentialCoordinatesArr,
+          planeEdge,
+          startCoordinate,
+          endCoordinate
+        );
+
+      potentialCoordinatesArr = [...planePotentialCoordiantes];
+
+      return;
+    }
+
+    const { potentialCoordinates } = determineLeftSideCoordinates(
+      startCoordinate,
+      endCoordinate,
+      potentialCoordinatesArr
+    );
+
+    potentialCoordinatesArr = [...potentialCoordinates];
+  });
+
+  return potentialCoordinatesArr;
+};
+
+const determinePotentialCoordinatesFromPlaneEdge = (
+  potentialCoordinatesArr: ICoordinates[],
+  planeEdge: "x" | "y",
+  startCoordinate: ICoordinates,
+  endCoordinate: ICoordinates
+) => {
+  const xPlane = planeEdge === "x";
+
+  const planeValue = xPlane ? startCoordinate.y : startCoordinate.x;
+
+  const startEdgeValue = xPlane ? startCoordinate.x : startCoordinate.y;
+  const endEdgeValue = xPlane ? endCoordinate.x : endCoordinate.y;
+
+  return potentialCoordinatesArr.reduce((acc, potentialCoordinate) => {
+    const hasPotential = determinePotentialCoordinateFromPlaneEdge(
+      xPlane,
+      planeValue,
+      startEdgeValue,
+      endEdgeValue,
+      potentialCoordinate
+    );
+
+    if (hasPotential) {
+      acc.push(potentialCoordinate);
+    }
+
+    return acc;
+  }, [] as ICoordinates[]);
+};
+
+const determinePotentialCoordinateFromPlaneEdge = (
+  xPlane: boolean,
+  planeValue: number,
+  startEdgeValue: number,
+  endEdgeValue: number,
+  potentialCoordinate: ICoordinates
+) => {
+  const potentialEdgeValue = xPlane
+    ? potentialCoordinate.x
+    : potentialCoordinate.y;
+  const potentialNonPlaneValue = xPlane
+    ? potentialCoordinate.y
+    : potentialCoordinate.x;
+
+  if (startEdgeValue < endEdgeValue) {
+    if (xPlane) {
+      return potentialNonPlaneValue >= planeValue;
+    } else {
+      return potentialNonPlaneValue <= planeValue;
+    }
+  } else {
+    if (xPlane) {
+      return potentialNonPlaneValue <= planeValue;
+    } else {
+      return potentialNonPlaneValue >= planeValue;
+    }
+  }
+};
+
+const determineLeftSideCoordinates = (
+  lineStart: ICoordinates,
+  lineEnd: ICoordinates,
+  allCoordinates: ICoordinates[]
+) => {
+  const { externalCoordinates, potentialCoordinates } = allCoordinates.reduce(
+    (sortedCoordinates, coordinate) => {
+      if (isCoordinateOutside(lineStart, lineEnd, coordinate, 0)) {
+        sortedCoordinates.externalCoordinates.push(coordinate);
+      } else {
+        sortedCoordinates.potentialCoordinates.push(coordinate);
+      }
+
+      return sortedCoordinates;
+    },
+    {
+      externalCoordinates: [] as Array<ICoordinates>,
+      potentialCoordinates: [] as Array<ICoordinates>,
+    }
+  );
+
+  return { externalCoordinates, potentialCoordinates };
 };
 
 const whatsInTheBox = (
@@ -141,8 +385,8 @@ const whatsInTheBox = (
 
   const coordinatesInXBounds = allPoints.reduce((acc, cur) => {
     const { x: potentialX } = cur;
-    const inXCurToNext = currentX > potentialX && potentialX > nextX;
-    const inXNextToCur = nextX > potentialX && potentialX > currentX;
+    const inXCurToNext = currentX >= potentialX && potentialX >= nextX;
+    const inXNextToCur = nextX >= potentialX && potentialX >= currentX;
 
     if (inXCurToNext || inXNextToCur) {
       acc.push(cur);
@@ -154,8 +398,8 @@ const whatsInTheBox = (
   const coordinatesInYBounds = coordinatesInXBounds.reduce((acc, cur) => {
     const { y: potentialY } = cur;
 
-    const inYCurToNext = currentY > potentialY && potentialY > nextY;
-    const inYNextToCur = nextY > potentialY && potentialY > currentY;
+    const inYCurToNext = currentY >= potentialY && potentialY >= nextY;
+    const inYNextToCur = nextY >= potentialY && potentialY >= currentY;
 
     if (inYCurToNext || inYNextToCur) {
       acc.push(cur);
