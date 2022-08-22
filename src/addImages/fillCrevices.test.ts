@@ -41,6 +41,7 @@ describe("fillCrevices", () => {
     ];
 
     it("returns image perimeter without crevice bottom coordinate", () => {
+      debugger;
       const { imgPerimeter } = createImgPerimeterFromOrderedCoordinates(
         "001",
         rectangleTopCreviceCoordinates

@@ -8,7 +8,7 @@ import {
   determineCreviceClearanceArea,
   IClearanceArea,
 } from "./determineCreviceClearanceArea";
-import { generateEdgesMap, IEdge } from "./generateEdgesMap";
+import { generateEdgesMap, IEdgesMap } from "./generateEdgesMap";
 
 interface IClearanceAreaInfo {
   preCrevicePointId: string;
@@ -19,113 +19,145 @@ export const fillCrevices = (
   agglomeratedImgPerimeter: Map<string, IPoint>,
   clearanceWidth: number
 ): Map<string, IPoint> => {
-  let filledPerimeter: Map<string, IPoint>;
+  const clearanceAreas = clearanceAreasFromPerimeter(
+    agglomeratedImgPerimeter,
+    clearanceWidth
+  );
 
-  const fillNextCrevice = (latestImgPerimeter: Map<string, IPoint>) => {
-    const agglomeratedImgEdges = generateEdgesMap(latestImgPerimeter);
+  if (!clearanceAreas) {
+    return agglomeratedImgPerimeter;
+  }
 
-    let newPerimPoints = new Map() as Map<string, IPoint>;
+  const filledPerimeter = replaceCrevicePointWithClearanceArea(
+    agglomeratedImgPerimeter,
+    clearanceAreas
+  );
 
-    for (const [edgeId, newEdge] of agglomeratedImgEdges) {
-      const fromPtId = newEdge.points.from.currentImgPointId;
-      const fromPt = newEdge.points.from;
+  const finalPerimeter = fillCrevices(filledPerimeter, clearanceWidth);
 
-      newPerimPoints.set(fromPtId, fromPt);
+  return finalPerimeter;
+};
 
-      const toPtId = newEdge.points.to.currentImgPointId;
-      const toPt = newEdge.points.to;
+const clearanceAreasFromPerimeter = (
+  latestImgPerimeter: Map<string, IPoint>,
+  clearanceWidth: number
+) => {
+  const agglomeratedImgEdges = generateEdgesMap(latestImgPerimeter);
 
-      newPerimPoints.set(toPtId, toPt);
+  const leftCreviceEdgeIds = findEdgesLeftOfCrevices(agglomeratedImgEdges);
+
+  const coordinatesOfCrevices = findCreviceCoordinates(
+    leftCreviceEdgeIds,
+    agglomeratedImgEdges
+  );
+
+  const definedClearanceAreas = determineCreviceClearanceAreas(
+    coordinatesOfCrevices,
+    clearanceWidth
+  );
+
+  return definedClearanceAreas;
+};
+
+const findEdgesLeftOfCrevices = (agglomeratedImgEdges: IEdgesMap) => {
+  const leftCreviceEdgeIds = new Set<string>();
+
+  for (const [key, edge] of agglomeratedImgEdges) {
+    if (
+      edge.points.from.type !== "crevice" &&
+      edge.points.to.type === "crevice"
+    ) {
+      leftCreviceEdgeIds.add(key);
     }
 
-    const leftCreviceEdgeIds = new Set<string>();
-
-    for (const [key, edge] of agglomeratedImgEdges) {
-      if (
-        edge.points.from.type !== "crevice" &&
-        edge.points.to.type === "crevice"
-      ) {
-        leftCreviceEdgeIds.add(key);
-      }
-
-      if (
-        edge.points.from.type === "crevice" &&
-        edge.points.to.type === "crevice"
-      ) {
-        leftCreviceEdgeIds.add(key);
-      }
+    if (
+      edge.points.from.type === "crevice" &&
+      edge.points.to.type === "crevice"
+    ) {
+      leftCreviceEdgeIds.add(key);
     }
+  }
 
-    const coordinatesOfCrevices: {
-      preCrevicePointId: string;
+  return leftCreviceEdgeIds;
+};
+
+interface ICreviceInfo {
+  preCrevicePointId: string;
+  coordinates: {
+    topLeft: ICoordinates;
+    bottom: ICoordinates;
+    topRight: ICoordinates;
+  };
+}
+
+const findCreviceCoordinates = (
+  leftCreviceEdgeIds: Set<string>,
+  agglomeratedImgEdges: IEdgesMap
+): ICreviceInfo[] => {
+  const coordinatesOfCrevices: {
+    preCrevicePointId: string;
+    coordinates: {
+      topLeft: ICoordinates;
+      bottom: ICoordinates;
+      topRight: ICoordinates;
+    };
+  }[] = [];
+
+  for (const leftCreviceId of leftCreviceEdgeIds) {
+    const leftCreviceEdge = agglomeratedImgEdges.get(leftCreviceId);
+    const rightCreviceEdge = agglomeratedImgEdges.get(
+      leftCreviceEdge!.nextEdge
+    );
+
+    const topLeft = leftCreviceEdge!.points.from.coordinates;
+    const bottom = leftCreviceEdge!.points.to.coordinates;
+    const topRight = rightCreviceEdge!.points.to.coordinates;
+
+    coordinatesOfCrevices.push({
+      preCrevicePointId: leftCreviceEdge!.points.from.currentImgPointId,
       coordinates: {
-        topLeft: ICoordinates;
-        bottom: ICoordinates;
-        topRight: ICoordinates;
-      };
-    }[] = [];
+        topLeft,
+        bottom,
+        topRight,
+      },
+    });
+  }
 
-    for (const leftCreviceId of leftCreviceEdgeIds) {
-      const leftCreviceEdge = agglomeratedImgEdges.get(leftCreviceId);
-      const rightCreviceEdge = agglomeratedImgEdges.get(
-        leftCreviceEdge!.nextEdge
+  return coordinatesOfCrevices;
+};
+
+const determineCreviceClearanceAreas = (
+  coordinatesOfCrevices: ICreviceInfo[],
+  clearanceWidth: number
+) => {
+  const clearanceAreas = coordinatesOfCrevices.map(
+    ({ preCrevicePointId, coordinates }) => {
+      const { topLeft, bottom, topRight } = coordinates;
+      const areas = determineCreviceClearanceArea(
+        topLeft,
+        bottom,
+        topRight,
+        clearanceWidth
       );
 
-      const topLeft = leftCreviceEdge!.points.from.coordinates;
-      const bottom = leftCreviceEdge!.points.to.coordinates;
-      const topRight = rightCreviceEdge!.points.to.coordinates;
+      if (!areas) return;
 
-      coordinatesOfCrevices.push({
-        preCrevicePointId: leftCreviceEdge!.points.from.currentImgPointId,
-        coordinates: {
-          topLeft,
-          bottom,
-          topRight,
-        },
-      });
+      const clearanceAreaInfo = {
+        preCrevicePointId,
+        areaCoordinates: { ...areas },
+      } as IClearanceAreaInfo;
+
+      return clearanceAreaInfo;
     }
+  );
 
-    const clearanceAreas = coordinatesOfCrevices.map(
-      ({ preCrevicePointId, coordinates }) => {
-        const { topLeft, bottom, topRight } = coordinates;
-        const areas = determineCreviceClearanceArea(
-          topLeft,
-          bottom,
-          topRight,
-          clearanceWidth
-        );
+  const definedClearanceAreas = removeUndefinedArrElements(clearanceAreas);
 
-        if (!areas) return;
+  if (definedClearanceAreas[0] === undefined) {
+    return;
+  }
 
-        const clearanceAreaInfo = {
-          preCrevicePointId,
-          areaCoordinates: { ...areas },
-        } as IClearanceAreaInfo;
-
-        return clearanceAreaInfo;
-      }
-    );
-
-    const definedClearanceAreas = removeUndefinedArrElements(clearanceAreas);
-
-    if (definedClearanceAreas[0] === undefined) {
-      return;
-    }
-
-    filledPerimeter = replaceCrevicePointWithClearanceArea(
-      newPerimPoints,
-      definedClearanceAreas
-    );
-
-    //first one big success
-    //second one big success
-    fillNextCrevice(filledPerimeter);
-  };
-
-  fillNextCrevice(agglomeratedImgPerimeter);
-
-  // @ts-ignore
-  return filledPerimeter;
+  return definedClearanceAreas;
 };
 
 const replaceCrevicePointWithClearanceArea = (
