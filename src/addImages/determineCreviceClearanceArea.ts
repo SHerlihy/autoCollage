@@ -70,6 +70,12 @@ export const determineCreviceClearanceArea = (
     minWidthToBottomDegrees
   );
 
+  // added here as thin crevices can lead to rounding errors
+  // Non-confirmed
+  if (bottomEdgeLength > rightEdgeLength || bottomEdgeLength > leftEdgeLength) {
+    return;
+  }
+
   const rightClearance = determineClearance(
     rightEdgeLength,
     leftEdgeLength,

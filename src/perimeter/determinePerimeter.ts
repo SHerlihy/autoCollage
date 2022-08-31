@@ -31,38 +31,16 @@ const determineRemainingPerimeterPointIds = (
     currentPointId: string,
     potentialNextPointId: string
   ) => {
-    const currentPointValues = allPoints.get(currentPointId)!;
-    const potentialNextPointValues = allPoints.get(potentialNextPointId)!;
+    const { coordinates: currentImageCoordinate } =
+      allOtherPoints.get(currentPointId)!;
 
     allOtherPoints.delete(currentPointId);
 
-    const otherCoordinatesArr = [...allOtherPoints.values()].map(
-      ({ coordinates }) => coordinates
+    const nextPointId = determineNextPoint(
+      currentImageCoordinate,
+      potentialNextPointId,
+      allOtherPoints
     );
-
-    const nextPointCoordinates = determineNextPoint(
-      currentPointValues.coordinates,
-      potentialNextPointValues.coordinates,
-      offset,
-      otherCoordinatesArr
-    );
-
-    const nextPointId = [...allOtherPoints.entries()].reduce(
-      (acc, [key, { coordinates }]) => {
-        if (
-          coordinates.x === nextPointCoordinates.x &&
-          coordinates.y === nextPointCoordinates.y
-        ) {
-          acc = key;
-        }
-
-        return acc;
-      },
-      startingPointId
-    );
-
-    // //might have to be careful here but above should run first (should!)
-    // allOtherPoints.delete(potentialNextPointId);
 
     const nextImagePointId = allPoints.get(nextPointId)!.nextImgPointId;
 
@@ -70,16 +48,40 @@ const determineRemainingPerimeterPointIds = (
     newCurrentPoint.nextImgPointId = nextPointId;
 
     perimeterPoints.set(currentPointId, newCurrentPoint);
-    // perimeterPoints.set(nextPointId, allPoints.get(nextPointId)!);
 
     if (nextPointId === startingPointId) {
+      allOtherPoints.delete(startingPointId);
       return;
     }
 
     setPerimeterPoints(nextPointId, nextImagePointId);
   };
 
-  setPerimeterPoints(startingPointId, startingNextImagePointId);
+  const { coordinates: currentImageCoordinate } =
+    allOtherPoints.get(startingPointId)!;
+
+  const firstPassPoints = new Map(allOtherPoints);
+
+  firstPassPoints.delete(startingPointId);
+
+  const nextPointId = determineNextPoint(
+    currentImageCoordinate,
+    startingNextImagePointId,
+    firstPassPoints
+  );
+
+  const nextImagePointId = allPoints.get(nextPointId)!.nextImgPointId;
+
+  const newCurrentPoint = { ...allPoints.get(startingPointId)! };
+  newCurrentPoint.nextImgPointId = nextPointId;
+
+  perimeterPoints.set(startingPointId, newCurrentPoint);
+
+  if (nextPointId === startingPointId) {
+    return perimeterPoints;
+  }
+
+  setPerimeterPoints(nextPointId, nextImagePointId);
 
   return perimeterPoints;
 };

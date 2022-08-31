@@ -164,68 +164,98 @@ const replaceCrevicePointWithClearanceArea = (
   perimeter: Map<string, IPoint>,
   clearanceAreas: IClearanceAreaInfo[]
 ): Map<string, IPoint> => {
-  // ends up just duplicating last ones
+  const crevicePointIds = [] as Array<string>;
+
   const clearanceImgPointsMapsArr = clearanceAreas.map(
     ({ preCrevicePointId, areaCoordinates }) => {
-      const tlKey = CreateIds.getInstance().generateNovelId();
-      const trKey = CreateIds.getInstance().generateNovelId();
-      const brKey = CreateIds.getInstance().generateNovelId();
-      const blKey = CreateIds.getInstance().generateNovelId();
+      const { linkedCoordinatesMap, coordinatesMap, brKey, blKey } =
+        areaCoordinatesMap(areaCoordinates);
 
-      const linkedCoordinatesMap = new Map<string, string>([
-        [tlKey, trKey],
-        [trKey, brKey],
-        [brKey, blKey],
-        [blKey, tlKey],
-      ]);
-
-      const coordinatesMap = new Map();
-
-      for (const [areaKey, areaCoordinate] of Object.entries(areaCoordinates)) {
-        let newKey;
-
-        switch (areaKey) {
-          case "tl":
-            newKey = tlKey;
-            break;
-          case "tr":
-            newKey = trKey;
-            break;
-          case "br":
-            newKey = brKey;
-            break;
-          case "bl":
-            newKey = blKey;
-            break;
-          default:
-            break;
-        }
-        coordinatesMap.set(newKey, areaCoordinate);
-      }
-
-      const arr = imgPointsMapFromCoordinates(
+      const linkedClearancePerimeter = imgPointsMapFromCoordinates(
         linkedCoordinatesMap,
         coordinatesMap
       );
 
       const preCrevicePoint = perimeter.get(preCrevicePointId)!;
       const crevicePointId = preCrevicePoint.nextImgPointId;
+      crevicePointIds.push(crevicePointId);
       const postCrevicePointId = perimeter.get(crevicePointId)!.nextImgPointId;
 
-      const brPoint = arr.get(brKey)!;
+      linkInClearanceArea(
+        preCrevicePoint,
+        postCrevicePointId,
+        preCrevicePointId,
+        linkedClearancePerimeter,
+        brKey,
+        blKey
+      );
 
-      preCrevicePoint.nextImgPointId = blKey;
-      brPoint.nextImgPointId = postCrevicePointId;
-      // perimeter.delete(crevicePointId);
-
-      return arr;
+      return linkedClearancePerimeter;
     }
   );
-  // Coordinates to points
+
+  // one crevices crevice can be another's pre crevice
+  for (const crevicePointId of crevicePointIds) {
+    perimeter.delete(crevicePointId);
+  }
 
   const allPointsMap = addMapsToMap(perimeter, clearanceImgPointsMapsArr);
 
   const newPerimeterPoints = determinePerimeterPoints(allPointsMap, 3);
 
   return newPerimeterPoints;
+};
+
+const linkInClearanceArea = (
+  preCrevicePoint: IPoint,
+  postCrevicePointId: string,
+  preCrevicePointId: string,
+  linkedAdditionalPerimeter: Map<string, IPoint>,
+  brKey: string,
+  blKey: string
+) => {
+  const brPoint = linkedAdditionalPerimeter.get(brKey)!;
+
+  preCrevicePoint.nextImgPointId = blKey;
+  brPoint.nextImgPointId = postCrevicePointId;
+};
+
+const areaCoordinatesMap = (areaCoordinates: IClearanceArea) => {
+  const coordinatesMap = new Map();
+
+  const tlKey = CreateIds.getInstance().generateNovelId();
+  const trKey = CreateIds.getInstance().generateNovelId();
+  const brKey = CreateIds.getInstance().generateNovelId();
+  const blKey = CreateIds.getInstance().generateNovelId();
+
+  const linkedCoordinatesMap = new Map<string, string>([
+    [tlKey, trKey],
+    [trKey, brKey],
+    [brKey, blKey],
+    [blKey, tlKey],
+  ]);
+
+  for (const [areaKey, areaCoordinate] of Object.entries(areaCoordinates)) {
+    let newKey;
+
+    switch (areaKey) {
+      case "tl":
+        newKey = tlKey;
+        break;
+      case "tr":
+        newKey = trKey;
+        break;
+      case "br":
+        newKey = brKey;
+        break;
+      case "bl":
+        newKey = blKey;
+        break;
+      default:
+        break;
+    }
+    coordinatesMap.set(newKey, areaCoordinate);
+  }
+
+  return { linkedCoordinatesMap, coordinatesMap, brKey, blKey };
 };

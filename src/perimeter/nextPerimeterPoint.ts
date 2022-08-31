@@ -2,7 +2,7 @@ import {
   isCoordinateOutside,
   lineDirection,
 } from "../addImages/generateEdgesMap";
-import { ICoordinates } from "./pointsTypes";
+import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
 import {
   getRadiansFromSides,
   getHypotenuseSideFromSides,
@@ -13,10 +13,12 @@ import {
 
 export const determineNextPoint = (
   currentImageCoordinate: ICoordinates,
-  nextImageCoordinate: ICoordinates,
-  offset: number,
-  allOtherPoints: ICoordinates[]
+  nextImagePointId: string,
+  allOtherPoints: IPointsMap
 ) => {
+  const { coordinates: nextImageCoordinate } =
+    allOtherPoints.get(nextImagePointId)!;
+
   const thresholdArea = validArea(
     currentImageCoordinate,
     nextImageCoordinate,
@@ -27,72 +29,67 @@ export const determineNextPoint = (
 
   // using this simpler algorithm reduce number of coordinates
   // going into next more complex algorithm
-  const boxBoundedCoordinates = whatsInTheBox(
+  const pointIdsInRectangle = identifyPointsInRectangle(
     { x: BL.x, y: TL.y },
     { x: TR.x, y: BR.y },
     allOtherPoints
   );
 
-  const areaBoundedCoordinates = identifyCoordinatesWithinBounds(
+  if (pointIdsInRectangle === null) {
+    return nextImagePointId;
+  }
+
+  const areaBoundedPointIds = identifyPointIdsWithinBounds(
     Object.values(thresholdArea),
-    boxBoundedCoordinates
+    pointIdsInRectangle,
+    allOtherPoints
   );
 
-  const identifyClosestCoordinateToCoordinate = (
-    principleCoordinate: ICoordinates,
-    otherCoordinates: ICoordinates[]
-  ) => {
-    const { x: principleX, y: principleY } = principleCoordinate;
+  if (areaBoundedPointIds === null) {
+    return nextImagePointId;
+  }
 
-    const closestCoordinate = otherCoordinates.reduce(
-      (acc, otherCoordinate) => {
-        const { x: otherX, y: otherY } = otherCoordinate;
+  const nextPointId = identifyClosestCoordinateToCoordinate(
+    currentImageCoordinate,
+    nextImagePointId,
+    areaBoundedPointIds,
+    allOtherPoints
+  );
 
-        const otherDistance = getHypotenuseSideFromSides(
-          Math.abs(principleX - otherX),
-          Math.abs(principleY - otherY)
-        );
+  return nextPointId;
+};
 
-        if (!acc.distance || otherDistance < acc.distance) {
-          acc = {
-            closestCoordinate: otherCoordinate,
-            distance: otherDistance,
-          };
-        }
+const identifyClosestCoordinateToCoordinate = (
+  principleCoordinate: ICoordinates,
+  nextImgPointId: string,
+  potentialPointIds: Set<string>,
+  allOtherPoints: IPointsMap
+) => {
+  let closestPointId = nextImgPointId;
 
-        return acc;
+  const { x: principleX, y: principleY } = principleCoordinate;
+  const { coordinates } = allOtherPoints.get(nextImgPointId)!;
 
-        //need to sort out distance, set to distance between edge coordinates
-      },
-      {} as { closestCoordinate: ICoordinates; distance: number }
+  let closestPointDistance = getHypotenuseSideFromSides(
+    Math.abs(principleX - coordinates.x),
+    Math.abs(principleY - coordinates.y)
+  );
+
+  for (const pointId of potentialPointIds) {
+    const { coordinates } = allOtherPoints.get(pointId)!;
+
+    const distanceToOrigin = getHypotenuseSideFromSides(
+      Math.abs(principleX - coordinates.x),
+      Math.abs(principleY - coordinates.y)
     );
 
-    return closestCoordinate;
-  };
-
-  const { closestCoordinate: nextBoxPoint } =
-    identifyClosestCoordinateToCoordinate(currentImageCoordinate, [
-      ...boxBoundedCoordinates,
-      nextImageCoordinate,
-    ]);
-
-  const { closestCoordinate: nextPoint } =
-    identifyClosestCoordinateToCoordinate(currentImageCoordinate, [
-      ...areaBoundedCoordinates,
-      nextImageCoordinate,
-    ]);
-
-  if (nextBoxPoint.x !== nextPoint.x) {
-    console.log(nextBoxPoint);
-    console.log(nextPoint);
+    if (distanceToOrigin < closestPointDistance) {
+      closestPointId = pointId;
+      closestPointDistance = distanceToOrigin;
+    }
   }
 
-  if (nextBoxPoint.y !== nextPoint.y) {
-    console.log(nextBoxPoint);
-    console.log(nextPoint);
-  }
-
-  return nextPoint || nextImageCoordinate;
+  return closestPointId;
 };
 
 //need to define an area of acceptable next points
@@ -250,13 +247,20 @@ const validAreaOnAxisLine = (
   throw new Error("Incorrect direction given");
 };
 
-const identifyCoordinatesWithinBounds = (
+const identifyPointIdsWithinBounds = (
   bounds: ICoordinates[],
-  allCoordinates: ICoordinates[]
+  potentialPointIds: Set<string>,
+  allPoints: IPointsMap
 ) => {
-  let potentialCoordinatesArr = [...allCoordinates];
+  let updatedPotentialPointIds: Set<string> | null = new Set<string>(
+    potentialPointIds
+  );
 
   bounds.forEach((startCoordinate, idx, arr) => {
+    if (updatedPotentialPointIds === null) {
+      return;
+    }
+
     const endCoordinate = idx === arr.length - 1 ? arr[0] : arr[idx + 1];
 
     const planeEdge =
@@ -267,180 +271,196 @@ const identifyCoordinatesWithinBounds = (
         : null;
 
     if (planeEdge) {
-      const planePotentialCoordiantes =
-        determinePotentialCoordinatesFromPlaneEdge(
-          potentialCoordinatesArr,
-          planeEdge,
-          startCoordinate,
-          endCoordinate
-        );
+      const identifierFn =
+        planeEdge === "x"
+          ? potentialPointIdsAlongXPlaneEdge
+          : potentialPointIdsAlongYPlaneEdge;
+      const planePotentialPointIds = identifierFn(
+        updatedPotentialPointIds,
+        allPoints,
+        startCoordinate,
+        endCoordinate
+      );
 
-      potentialCoordinatesArr = [...planePotentialCoordiantes];
+      updatedPotentialPointIds = planePotentialPointIds;
 
       return;
     }
 
-    const { potentialCoordinates } = determineLeftSideCoordinates(
+    const potentialCoordinates = determineLeftSideCoordinates(
+      updatedPotentialPointIds,
+      allPoints,
       startCoordinate,
-      endCoordinate,
-      potentialCoordinatesArr
+      endCoordinate
     );
 
-    potentialCoordinatesArr = [...potentialCoordinates];
+    updatedPotentialPointIds = potentialCoordinates;
   });
 
-  return potentialCoordinatesArr;
+  return updatedPotentialPointIds as Set<string> | null;
 };
 
-const determinePotentialCoordinatesFromPlaneEdge = (
-  potentialCoordinatesArr: ICoordinates[],
-  planeEdge: "x" | "y",
+const potentialPointIdsAlongXPlaneEdge = (
+  currentPotentialPointIds: Set<string>,
+  allPoints: IPointsMap,
   startCoordinate: ICoordinates,
   endCoordinate: ICoordinates
 ) => {
-  const xPlane = planeEdge === "x";
+  let updatedPotentialPointIds = new Set<string>();
 
-  const planeValue = xPlane ? startCoordinate.y : startCoordinate.x;
-
-  const startEdgeValue = xPlane ? startCoordinate.x : startCoordinate.y;
-  const endEdgeValue = xPlane ? endCoordinate.x : endCoordinate.y;
-
-  return potentialCoordinatesArr.reduce((acc, potentialCoordinate) => {
-    const hasPotential = determinePotentialCoordinateFromPlaneEdge(
-      xPlane,
-      planeValue,
-      startEdgeValue,
-      endEdgeValue,
-      potentialCoordinate
+  for (const pointId of currentPotentialPointIds) {
+    const { coordinates } = allPoints.get(pointId)!;
+    const hasPotential = identifyPotentialCoordinateFromXPlaneEdge(
+      coordinates.x,
+      startCoordinate.y,
+      startCoordinate.x,
+      endCoordinate.x
     );
 
     if (hasPotential) {
-      acc.push(potentialCoordinate);
+      updatedPotentialPointIds.add(pointId);
     }
+  }
 
-    return acc;
-  }, [] as ICoordinates[]);
+  if (updatedPotentialPointIds.size === 0) {
+    return null;
+  }
+
+  return updatedPotentialPointIds;
 };
 
-const determinePotentialCoordinateFromPlaneEdge = (
-  xPlane: boolean,
+const potentialPointIdsAlongYPlaneEdge = (
+  currentPotentialPointIds: Set<string>,
+  allPoints: IPointsMap,
+  startCoordinate: ICoordinates,
+  endCoordinate: ICoordinates
+) => {
+  let potentialPointIds = new Set<string>();
+
+  for (const pointId of currentPotentialPointIds) {
+    const { coordinates } = allPoints.get(pointId)!;
+    const hasPotential = identifyPotentialCoordinateFromYPlaneEdge(
+      coordinates.y,
+      startCoordinate.x,
+      startCoordinate.y,
+      endCoordinate.y
+    );
+
+    if (hasPotential) {
+      potentialPointIds.add(pointId);
+    }
+  }
+
+  if (potentialPointIds.size === 0) {
+    return null;
+  }
+
+  return potentialPointIds;
+};
+
+const identifyPotentialCoordinateFromXPlaneEdge = (
+  potentialNonPlaneValue: number,
   planeValue: number,
   startEdgeValue: number,
-  endEdgeValue: number,
-  potentialCoordinate: ICoordinates
+  endEdgeValue: number
 ) => {
-  const potentialEdgeValue = xPlane
-    ? potentialCoordinate.x
-    : potentialCoordinate.y;
-  const potentialNonPlaneValue = xPlane
-    ? potentialCoordinate.y
-    : potentialCoordinate.x;
-
   if (startEdgeValue < endEdgeValue) {
-    if (xPlane) {
-      return potentialNonPlaneValue >= planeValue;
-    } else {
-      return potentialNonPlaneValue <= planeValue;
-    }
+    return potentialNonPlaneValue >= planeValue;
   } else {
-    if (xPlane) {
-      return potentialNonPlaneValue <= planeValue;
-    } else {
-      return potentialNonPlaneValue >= planeValue;
-    }
+    return potentialNonPlaneValue <= planeValue;
+  }
+};
+
+const identifyPotentialCoordinateFromYPlaneEdge = (
+  potentialNonPlaneValue: number,
+  planeValue: number,
+  startEdgeValue: number,
+  endEdgeValue: number
+) => {
+  if (startEdgeValue < endEdgeValue) {
+    return potentialNonPlaneValue <= planeValue;
+  } else {
+    return potentialNonPlaneValue >= planeValue;
   }
 };
 
 const determineLeftSideCoordinates = (
+  currentPotentialPointIds: Set<string>,
+  allPoints: IPointsMap,
   lineStart: ICoordinates,
-  lineEnd: ICoordinates,
-  allCoordinates: ICoordinates[]
+  lineEnd: ICoordinates
 ) => {
-  const { externalCoordinates, potentialCoordinates } = allCoordinates.reduce(
-    (sortedCoordinates, coordinate) => {
-      if (isCoordinateOutside(lineStart, lineEnd, coordinate, 0)) {
-        sortedCoordinates.externalCoordinates.push(coordinate);
-      } else {
-        sortedCoordinates.potentialCoordinates.push(coordinate);
-      }
+  let potentialCoordinates = new Set<string>();
 
-      return sortedCoordinates;
-    },
-    {
-      externalCoordinates: [] as Array<ICoordinates>,
-      potentialCoordinates: [] as Array<ICoordinates>,
+  for (const pointId of currentPotentialPointIds) {
+    const { coordinates } = allPoints.get(pointId)!;
+    const externalCoordinate = isCoordinateOutside(
+      lineStart,
+      lineEnd,
+      coordinates,
+      0
+    );
+
+    if (!externalCoordinate) {
+      potentialCoordinates.add(pointId);
     }
-  );
+  }
 
-  return { externalCoordinates, potentialCoordinates };
+  if (potentialCoordinates.size === 0) {
+    return null;
+  }
+
+  return potentialCoordinates;
 };
 
-const whatsInTheBox = (
-  pointA: ICoordinates,
-  pointB: ICoordinates,
-  allPoints: ICoordinates[]
+const identifyPointsInRectangle = (
+  cornerA: ICoordinates,
+  cornerB: ICoordinates,
+  allPoints: Map<string, IPoint>
 ) => {
-  const { x: currentX, y: currentY } = pointA;
-  const { x: nextX, y: nextY } = pointB;
+  let pointIdsInXYBounds = new Set<string>();
 
-  const coordinatesInXBounds = allPoints.reduce((acc, cur) => {
-    const { x: potentialX } = cur;
-    const inXCurToNext = currentX >= potentialX && potentialX >= nextX;
-    const inXNextToCur = nextX >= potentialX && potentialX >= currentX;
+  for (const [pointId, { coordinates }] of allPoints) {
+    const pointInRectangle = coordinateWithinRectangle(
+      coordinates,
+      cornerA,
+      cornerB
+    );
 
-    if (inXCurToNext || inXNextToCur) {
-      acc.push(cur);
+    if (pointInRectangle) {
+      pointIdsInXYBounds.add(pointId);
     }
+  }
 
-    return acc;
-  }, [] as ICoordinates[]);
+  if (pointIdsInXYBounds.size === 0) {
+    return null;
+  }
 
-  const coordinatesInYBounds = coordinatesInXBounds.reduce((acc, cur) => {
-    const { y: potentialY } = cur;
-
-    const inYCurToNext = currentY >= potentialY && potentialY >= nextY;
-    const inYNextToCur = nextY >= potentialY && potentialY >= currentY;
-
-    if (inYCurToNext || inYNextToCur) {
-      acc.push(cur);
-    }
-
-    return acc;
-  }, [] as ICoordinates[]);
-
-  return coordinatesInYBounds;
+  return pointIdsInXYBounds;
 };
 
-const determinePointBetweenParallelPoints = (
-  point: ICoordinates,
-  rightPoint: ICoordinates,
-  leftPoint: ICoordinates
+const coordinateWithinRectangle = (
+  coordinates: ICoordinates,
+  cornerA: ICoordinates,
+  cornerB: ICoordinates
 ) => {
-  const lengthRight = getHypotenuseSideFromSides(
-    rightPoint.x - leftPoint.x,
-    leftPoint.y - rightPoint.y
-  );
+  const { x: currentX, y: currentY } = cornerA;
+  const { x: nextX, y: nextY } = cornerB;
 
-  const lengthRightTo = getHypotenuseSideFromSides(
-    rightPoint.x - point.x,
-    rightPoint.y - point.y
-  );
+  const { x: potentialX, y: potentialY } = coordinates;
+  const inXCurToNext = currentX >= potentialX && potentialX >= nextX;
+  const inXNextToCur = nextX >= potentialX && potentialX >= currentX;
 
-  const lengthLeftTo = getHypotenuseSideFromSides(
-    leftPoint.x - point.x,
-    leftPoint.y - point.y
-  );
+  if (!inXCurToNext && !inXNextToCur) {
+    return false;
+  }
 
-  const leftAngle = getRadiansFromSides(
-    lengthLeftTo,
-    lengthRightTo,
-    lengthRight
-  );
-  const RightAngle = getRadiansFromSides(
-    lengthRightTo,
-    lengthLeftTo,
-    lengthRight
-  );
+  const inYCurToNext = currentY >= potentialY && potentialY >= nextY;
+  const inYNextToCur = nextY >= potentialY && potentialY >= currentY;
 
-  return leftAngle < 90 && RightAngle < 90;
+  if (!inYCurToNext && !inYNextToCur) {
+    return false;
+  }
+
+  return true;
 };
