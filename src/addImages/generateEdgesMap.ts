@@ -65,7 +65,7 @@ const determinePointTypes = (pointsMap: IPointsMap) => {
       toPoint: IPoint,
       theId?: string
     ): string => {
-      const isCrevice = !isCoordinateOutside(
+      const isCrevice = !isCoordinateLeftOfEdge(
         prevPoint.coordinates,
         toPoint.coordinates,
         fromPoint.coordinates,
@@ -194,13 +194,13 @@ const determineEdgeAnglesFromPoints = (
   return fromType;
 };
 
-export const isCoordinateOutside = (
+export const isCoordinateLeftOfEdge = (
   lineStart: ICoordinates,
   lineEnd: ICoordinates,
   subjectCoordinate: ICoordinates,
   creviceThreshold: number
 ) => {
-  const directionalOutside = isDirectionalOutside(
+  const directionalOutside = isLeftOfEdgeDirectional(
     lineStart,
     lineEnd,
     subjectCoordinate
@@ -210,7 +210,7 @@ export const isCoordinateOutside = (
     return directionalOutside;
   }
 
-  const gradientOutside = isGradientOutside(
+  const gradientOutside = isLeftOfEdgeGradient(
     lineStart,
     lineEnd,
     subjectCoordinate,
@@ -220,7 +220,7 @@ export const isCoordinateOutside = (
   return gradientOutside;
 };
 
-const isGradientOutside = (
+const isLeftOfEdgeGradient = (
   lineStart: ICoordinates,
   lineEnd: ICoordinates,
   subjectCoordinate: ICoordinates,
@@ -288,10 +288,10 @@ const isGradientOutside = (
 
   if (yDirection === "down" && xDirection === "left") {
     if (yToPointDirection === "down" && xToPointDirection === "left") {
-      return toPointGrad > lineGrad;
+      return toPointGrad < lineGrad;
     }
     if (yToPointDirection === "up" && xToPointDirection === "right") {
-      return toPointGrad < lineGrad;
+      return toPointGrad > lineGrad;
     }
   }
 
@@ -314,7 +314,7 @@ const isGradientOutside = (
   }
 };
 
-const isDirectionalOutside = (
+const isLeftOfEdgeDirectional = (
   lineStart: ICoordinates,
   lineEnd: ICoordinates,
   subjectCoordinate: ICoordinates
@@ -327,7 +327,7 @@ const isDirectionalOutside = (
 
   if (xDirectionBase === "vertical") {
     if (xDirectionPoint === "vertical") {
-      return true;
+      return false;
     }
     if (yDirectionBase === "down") {
       return subjectCoordinate.x > lineStart.x;
@@ -338,7 +338,7 @@ const isDirectionalOutside = (
 
   if (yDirectionBase === "horizontal") {
     if (yDirectionPoint === "horizontal") {
-      return true;
+      return false;
     }
     if (xDirectionBase === "right") {
       return subjectCoordinate.y < lineStart.y;

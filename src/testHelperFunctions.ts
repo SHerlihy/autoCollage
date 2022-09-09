@@ -1,5 +1,19 @@
 import { ICoordinates, IPoint } from "./perimeter/pointsTypes";
 
+export const coordinatesToPoint = (
+  coordinates: ICoordinates,
+  imgId: string,
+  currentImgPointId: string,
+  nextImgPointId: string
+) => {
+  return {
+    imgId,
+    currentImgPointId,
+    nextImgPointId,
+    coordinates,
+  } as IPoint;
+};
+
 export const createImgPerimeterFromOrderedCoordinates = (
   imgId: string,
   pointCoordinates: ICoordinates[]

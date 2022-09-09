@@ -1,6 +1,6 @@
 const path = require("path");
 
-const testFile = "src/perimeter/nextPerimeterPoint.test.ts";
+const testFile = "src/perimeter/determineLeftSideCoordinate.test.ts";
 
 module.exports = {
   entry: { fillCrevices: `./${testFile}` },
