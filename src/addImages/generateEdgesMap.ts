@@ -366,6 +366,7 @@ const isLeftOfEdgeDirectional = (
   return null;
 };
 
+// shared in on line
 export const lineDirection = (
   lineStartCoordinates: ICoordinates,
   lineEndCoordinates: ICoordinates
