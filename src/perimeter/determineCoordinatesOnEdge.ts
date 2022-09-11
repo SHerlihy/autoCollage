@@ -11,6 +11,7 @@ const distanceBetweenCoordinates = (
 
   return getHypotenuseSideFromSides(diffX, diffY);
 };
+
 export const determineCoordinatesOnEdge = (
   currentPotentialPointIds: Set<string>,
   allPoints: IPointsMap,
