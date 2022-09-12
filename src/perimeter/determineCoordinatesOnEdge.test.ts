@@ -1,35 +1,13 @@
-import { coordinatesToPoint } from "../testHelperFunctions";
 import { determineCoordinatesOnEdge } from "./determineCoordinatesOnEdge";
+import { coordinatesToDummyPoints } from "./pointsHelper";
 import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
 
-interface IPrecursorDummyIPoint {
-  id: string;
-  coordinates: ICoordinates;
-}
-
 const runDetermineOnEdgeFromData = (
-  potentialUnsuitableCoordinates: Array<IPrecursorDummyIPoint>,
-  potentialSuitableCoordinates: Array<IPrecursorDummyIPoint>,
+  unsuitablePoints: IPointsMap,
+  suitablePoints: IPointsMap,
   startCoordinates: ICoordinates,
   endCoordinates: ICoordinates
 ) => {
-  const unsuitablePoints = potentialUnsuitableCoordinates.map(
-    ({ id, coordinates }) => {
-      return [
-        id,
-        coordinatesToPoint(coordinates, "001", id, Math.random().toString()),
-      ] as readonly [string, IPoint];
-    }
-  );
-  const suitablePoints = potentialSuitableCoordinates.map(
-    ({ id, coordinates }) => {
-      return [
-        id,
-        coordinatesToPoint(coordinates, "001", id, Math.random().toString()),
-      ] as readonly [string, IPoint];
-    }
-  );
-
   const allOtherPointsMap = new Map([...unsuitablePoints, ...suitablePoints]);
 
   const currentPotentialPointIds = new Set(allOtherPointsMap.keys());
@@ -43,57 +21,38 @@ const runDetermineOnEdgeFromData = (
 };
 
 const runDetermineOnEdgeTest = (
-  potentialUnsuitableCoordinates: Array<IPrecursorDummyIPoint>,
-  potentialSuitableCoordinates: Array<IPrecursorDummyIPoint>,
+  unsuitablePoints: IPointsMap,
+  suitablePoints: IPointsMap,
   startCoordinates: ICoordinates,
   endCoordinates: ICoordinates
 ) => {
   const validPointIds = runDetermineOnEdgeFromData(
-    potentialUnsuitableCoordinates,
-    potentialSuitableCoordinates,
+    unsuitablePoints,
+    suitablePoints,
     startCoordinates,
     endCoordinates
   );
 
-  if (!potentialSuitableCoordinates.length) {
+  if (!suitablePoints.size) {
     expect(validPointIds).to.equal(null);
     return;
   }
 
-  if (potentialUnsuitableCoordinates.length) {
+  if (unsuitablePoints.size) {
     const validatedUnSuitableIds = [...validPointIds!].map((validId) => {
-      return potentialUnsuitableCoordinates.find(
-        (unsuitable) => unsuitable.id === validId
-      );
+      return unsuitablePoints.get(validId);
     });
 
     expect(validatedUnSuitableIds!.length).to.equal(0);
   }
 
-  if (potentialSuitableCoordinates.length) {
+  if (suitablePoints.size) {
     const validatedSuitableIds = [...validPointIds!].every((validId) => {
-      return potentialSuitableCoordinates.find(
-        (suitable) => suitable.id === validId
-      );
+      return suitablePoints.get(validId);
     });
 
     expect(validatedSuitableIds).to.equal(true);
   }
-};
-
-const generateDummyPointPrecursors = (coordinates: ICoordinates[]) => {
-  const dummyPointIds = coordinates.map(() => {
-    return Math.random().toString();
-  });
-
-  const dummyPointPrecursors = coordinates.map((currentCoordinates, idx) => {
-    return {
-      id: dummyPointIds[idx],
-      coordinates: currentCoordinates,
-    };
-  });
-
-  return dummyPointPrecursors;
 };
 
 describe("determineCoordinatesOnEdge", () => {
@@ -108,7 +67,7 @@ describe("determineCoordinatesOnEdge", () => {
 
   describe("axis edges", () => {
     describe("vertical edge", () => {
-      const onVerticalEdgePointPrecursors = generateDummyPointPrecursors([
+      const onVerticalEdgePointPrecursors = coordinatesToDummyPoints([
         { x: 100, y: 51 },
         { x: 100, y: 100 },
         { x: 100, y: 149 },
@@ -116,7 +75,7 @@ describe("determineCoordinatesOnEdge", () => {
 
       it("is a down vertical edge", () => {
         runDetermineOnEdgeTest(
-          [],
+          new Map(),
           onVerticalEdgePointPrecursors,
           topMidCoordinate,
           lowMidCoordinate
@@ -125,7 +84,7 @@ describe("determineCoordinatesOnEdge", () => {
 
       it("is a up vertical edge", () => {
         runDetermineOnEdgeTest(
-          [],
+          new Map(),
           onVerticalEdgePointPrecursors,
           lowMidCoordinate,
           topMidCoordinate
@@ -133,7 +92,7 @@ describe("determineCoordinatesOnEdge", () => {
       });
     });
     describe("horizontal edge", () => {
-      const onHorizontalEdgePointPrecursors = generateDummyPointPrecursors([
+      const onHorizontalEdgePointPrecursors = coordinatesToDummyPoints([
         { x: 51, y: 100 },
         { x: 100, y: 100 },
         { x: 149, y: 100 },
@@ -141,7 +100,7 @@ describe("determineCoordinatesOnEdge", () => {
 
       it("is a right horizontal edge", () => {
         runDetermineOnEdgeTest(
-          [],
+          new Map(),
           onHorizontalEdgePointPrecursors,
           midLeftCoordinate,
           midRightCoordinate
@@ -150,7 +109,7 @@ describe("determineCoordinatesOnEdge", () => {
 
       it("is a left horizontal edge", () => {
         runDetermineOnEdgeTest(
-          [],
+          new Map(),
           onHorizontalEdgePointPrecursors,
           midRightCoordinate,
           midLeftCoordinate
@@ -160,14 +119,14 @@ describe("determineCoordinatesOnEdge", () => {
   });
   describe("diagonal edges", () => {
     describe("back slash edges", () => {
-      const onBackSlashEdgePointPrecursors = generateDummyPointPrecursors([
+      const onBackSlashEdgePointPrecursors = coordinatesToDummyPoints([
         { x: 51, y: 149 },
         { x: 100, y: 100 },
         { x: 149, y: 51 },
       ]);
       it("up right edge", () => {
         runDetermineOnEdgeTest(
-          [],
+          new Map(),
           onBackSlashEdgePointPrecursors,
           lowLeftCoordinate,
           topRightCoordinate
@@ -175,7 +134,7 @@ describe("determineCoordinatesOnEdge", () => {
       });
       it("down left edge", () => {
         runDetermineOnEdgeTest(
-          [],
+          new Map(),
           onBackSlashEdgePointPrecursors,
           topRightCoordinate,
           lowLeftCoordinate
@@ -184,7 +143,7 @@ describe("determineCoordinatesOnEdge", () => {
     });
 
     describe("forward slash edges", () => {
-      const onForwardSlashEdgePointPrecursors = generateDummyPointPrecursors([
+      const onForwardSlashEdgePointPrecursors = coordinatesToDummyPoints([
         { x: 51, y: 51 },
         { x: 100, y: 100 },
         { x: 149, y: 149 },
@@ -192,7 +151,7 @@ describe("determineCoordinatesOnEdge", () => {
 
       it("down right edge", () => {
         runDetermineOnEdgeTest(
-          [],
+          new Map(),
           onForwardSlashEdgePointPrecursors,
           topLeftCoordinate,
           lowRightCoordinate
@@ -200,7 +159,7 @@ describe("determineCoordinatesOnEdge", () => {
       });
       it("up left edge", () => {
         runDetermineOnEdgeTest(
-          [],
+          new Map(),
           onForwardSlashEdgePointPrecursors,
           lowRightCoordinate,
           topLeftCoordinate
@@ -212,13 +171,13 @@ describe("determineCoordinatesOnEdge", () => {
   describe("potential coordinates close to edge", () => {
     describe("axis edges", () => {
       describe("vertical edge", () => {
-        const leftPointPrecursors = generateDummyPointPrecursors([
+        const leftPointPrecursors = coordinatesToDummyPoints([
           { x: 99, y: 51 },
           { x: 99, y: 100 },
           { x: 99, y: 149 },
         ]);
 
-        const rightPointPrecursors = generateDummyPointPrecursors([
+        const rightPointPrecursors = coordinatesToDummyPoints([
           { x: 101, y: 51 },
           { x: 101, y: 100 },
           { x: 101, y: 149 },
@@ -228,7 +187,7 @@ describe("determineCoordinatesOnEdge", () => {
           it("given unsuitable points", () => {
             runDetermineOnEdgeTest(
               leftPointPrecursors,
-              [],
+              new Map(),
               topMidCoordinate,
               lowMidCoordinate
             );
@@ -236,7 +195,7 @@ describe("determineCoordinatesOnEdge", () => {
           it("given other side unsuitable points", () => {
             runDetermineOnEdgeTest(
               rightPointPrecursors,
-              [],
+              new Map(),
               topMidCoordinate,
               lowMidCoordinate
             );
@@ -247,7 +206,7 @@ describe("determineCoordinatesOnEdge", () => {
           it("given unsuitable points", () => {
             runDetermineOnEdgeTest(
               rightPointPrecursors,
-              [],
+              new Map(),
               lowMidCoordinate,
               topMidCoordinate
             );
@@ -255,7 +214,7 @@ describe("determineCoordinatesOnEdge", () => {
           it("given other side unsuitable points", () => {
             runDetermineOnEdgeTest(
               leftPointPrecursors,
-              [],
+              new Map(),
               lowMidCoordinate,
               topMidCoordinate
             );
@@ -263,13 +222,13 @@ describe("determineCoordinatesOnEdge", () => {
         });
       });
       describe("horizontal edge", () => {
-        const upPointPrecursors = generateDummyPointPrecursors([
+        const upPointPrecursors = coordinatesToDummyPoints([
           { x: 51, y: 99 },
           { x: 100, y: 99 },
           { x: 149, y: 99 },
         ]);
 
-        const downPointPrecursors = generateDummyPointPrecursors([
+        const downPointPrecursors = coordinatesToDummyPoints([
           { x: 51, y: 101 },
           { x: 100, y: 101 },
           { x: 149, y: 101 },
@@ -279,7 +238,7 @@ describe("determineCoordinatesOnEdge", () => {
           it("given unsuitable points", () => {
             runDetermineOnEdgeTest(
               downPointPrecursors,
-              [],
+              new Map(),
               midLeftCoordinate,
               midRightCoordinate
             );
@@ -287,7 +246,7 @@ describe("determineCoordinatesOnEdge", () => {
           it("given other side unsuitable points", () => {
             runDetermineOnEdgeTest(
               upPointPrecursors,
-              [],
+              new Map(),
               midLeftCoordinate,
               midRightCoordinate
             );
@@ -298,7 +257,7 @@ describe("determineCoordinatesOnEdge", () => {
           it("given unsuitable points", () => {
             runDetermineOnEdgeTest(
               upPointPrecursors,
-              [],
+              new Map(),
               midRightCoordinate,
               midLeftCoordinate
             );
@@ -306,7 +265,7 @@ describe("determineCoordinatesOnEdge", () => {
           it("given other side unsuitable points", () => {
             runDetermineOnEdgeTest(
               downPointPrecursors,
-              [],
+              new Map(),
               midRightCoordinate,
               midLeftCoordinate
             );
@@ -316,25 +275,25 @@ describe("determineCoordinatesOnEdge", () => {
     });
 
     describe("diagonal edges", () => {
-      const leftUpPointPrecursors = generateDummyPointPrecursors([
+      const leftUpPointPrecursors = coordinatesToDummyPoints([
         { x: 149, y: 48 },
         { x: 100, y: 99 },
         { x: 49, y: 148 },
       ]);
 
-      const rightDownPointPrecursors = generateDummyPointPrecursors([
+      const rightDownPointPrecursors = coordinatesToDummyPoints([
         { x: 149, y: 52 },
         { x: 100, y: 101 },
         { x: 49, y: 152 },
       ]);
 
-      const leftDownPointPrecursors = generateDummyPointPrecursors([
+      const leftDownPointPrecursors = coordinatesToDummyPoints([
         { x: 149, y: 152 },
         { x: 100, y: 101 },
         { x: 49, y: 52 },
       ]);
 
-      const rightUpPointPrecursors = generateDummyPointPrecursors([
+      const rightUpPointPrecursors = coordinatesToDummyPoints([
         { x: 149, y: 148 },
         { x: 100, y: 99 },
         { x: 49, y: 48 },
@@ -344,7 +303,7 @@ describe("determineCoordinatesOnEdge", () => {
         it("given unsuitable points", () => {
           runDetermineOnEdgeTest(
             rightDownPointPrecursors,
-            [],
+            new Map(),
             lowLeftCoordinate,
             topRightCoordinate
           );
@@ -352,7 +311,7 @@ describe("determineCoordinatesOnEdge", () => {
         it("given other side unsuitable points", () => {
           runDetermineOnEdgeTest(
             leftUpPointPrecursors,
-            [],
+            new Map(),
             lowLeftCoordinate,
             topRightCoordinate
           );
@@ -363,7 +322,7 @@ describe("determineCoordinatesOnEdge", () => {
         it("given unsuitable points", () => {
           runDetermineOnEdgeTest(
             leftUpPointPrecursors,
-            [],
+            new Map(),
             topRightCoordinate,
             lowLeftCoordinate
           );
@@ -371,7 +330,7 @@ describe("determineCoordinatesOnEdge", () => {
         it("given other side unsuitable points", () => {
           runDetermineOnEdgeTest(
             rightDownPointPrecursors,
-            [],
+            new Map(),
             topRightCoordinate,
             lowLeftCoordinate
           );
@@ -382,7 +341,7 @@ describe("determineCoordinatesOnEdge", () => {
         it("given unsuitable points", () => {
           runDetermineOnEdgeTest(
             rightUpPointPrecursors,
-            [],
+            new Map(),
             lowRightCoordinate,
             topLeftCoordinate
           );
@@ -390,7 +349,7 @@ describe("determineCoordinatesOnEdge", () => {
         it("given other side unsuitable points", () => {
           runDetermineOnEdgeTest(
             leftDownPointPrecursors,
-            [],
+            new Map(),
             lowRightCoordinate,
             topLeftCoordinate
           );
@@ -401,7 +360,7 @@ describe("determineCoordinatesOnEdge", () => {
         it("given unsuitable points", () => {
           runDetermineOnEdgeTest(
             leftDownPointPrecursors,
-            [],
+            new Map(),
             topLeftCoordinate,
             lowRightCoordinate
           );
@@ -409,7 +368,7 @@ describe("determineCoordinatesOnEdge", () => {
         it("given other side unsuitable points", () => {
           runDetermineOnEdgeTest(
             rightUpPointPrecursors,
-            [],
+            new Map(),
             topLeftCoordinate,
             lowRightCoordinate
           );
