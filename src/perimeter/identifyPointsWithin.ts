@@ -54,18 +54,17 @@ const coordinateWithinRectangle = (
   return true;
 };
 
-//need to define an area of acceptable next points
-
+//Won't work if bounds have crevice
 export const identifyPointIdsWithinBounds = (
-  bounds: ICoordinates[],
+  counterclockwiseBounds: ICoordinates[],
   potentialPointIds: Set<string>,
   allPoints: IPointsMap
 ) => {
-  let updatedPotentialPointIds: Set<string> | null = new Set<string>(
+  let updatedPotentialPointIds: Set<string> = new Set<string>(
     potentialPointIds
   );
 
-  bounds.forEach((startCoordinate, idx, arr) => {
+  counterclockwiseBounds.forEach((startCoordinate, idx, arr) => {
     if (updatedPotentialPointIds === null) {
       return;
     }
@@ -73,17 +72,6 @@ export const identifyPointIdsWithinBounds = (
     let potentialCoordinates = new Set<string>();
 
     const endCoordinate = idx === arr.length - 1 ? arr[0] : arr[idx + 1];
-
-    const coordinatesOnEdge = determineCoordinatesOnEdge(
-      updatedPotentialPointIds,
-      allPoints,
-      startCoordinate,
-      endCoordinate
-    );
-
-    if (coordinatesOnEdge) {
-      potentialCoordinates = new Set([...coordinatesOnEdge]);
-    }
 
     const coordinatesToLeft = determineLeftSideCoordinates(
       updatedPotentialPointIds,
@@ -101,6 +89,28 @@ export const identifyPointIdsWithinBounds = (
 
     updatedPotentialPointIds = potentialCoordinates;
   });
+
+  counterclockwiseBounds.forEach((startCoordinate, idx, arr) => {
+    const endCoordinate = idx === arr.length - 1 ? arr[0] : arr[idx + 1];
+
+    const coordinatesOnEdge = determineCoordinatesOnEdge(
+      potentialPointIds,
+      allPoints,
+      startCoordinate,
+      endCoordinate
+    );
+
+    if (coordinatesOnEdge) {
+      updatedPotentialPointIds = new Set([
+        ...updatedPotentialPointIds,
+        ...coordinatesOnEdge,
+      ]);
+    }
+  });
+
+  if (updatedPotentialPointIds.size === 0) {
+    return null;
+  }
 
   return updatedPotentialPointIds as Set<string> | null;
 };
