@@ -1,20 +1,7 @@
 import { createImgPerimeterFromOrderedCoordinates } from "../testHelperFunctions";
 import { determineNextPoint } from "./nextPerimeterPoint";
-import { ICoordinates, IPoint } from "./pointsTypes";
-
-const coordinatesToPoint = (
-  coordinates: ICoordinates,
-  imgId: string,
-  currentImgPointId: string,
-  nextImgPointId: string
-) => {
-  return {
-    imgId,
-    currentImgPointId,
-    nextImgPointId,
-    coordinates,
-  } as IPoint;
-};
+import { coordinatesToPoint } from "./pointsHelper";
+import { ICoordinates } from "./pointsTypes";
 
 const setupPoints = (
   coordinatesB: ICoordinates,
@@ -77,108 +64,261 @@ const runDetermineNextPoint = (
   };
 };
 
+type RunTestDetermineNext = (
+  expectIntercept: boolean,
+  coordinatesA: ICoordinates,
+  coordinatesB: ICoordinates,
+  coordinatesPotentialNext: ICoordinates,
+  fillerCoordinates?: ICoordinates[]
+) => void;
+
+const runTestDetermineNext = (
+  expectIntercept: boolean,
+  coordinatesA: ICoordinates,
+  coordinatesB: ICoordinates,
+  coordinatesPotentialNext: ICoordinates,
+  fillerCoordinates?: ICoordinates[]
+) => {
+  const { nextPoint, pointB, pointInterrupt } = runDetermineNextPoint(
+    coordinatesA,
+    coordinatesB,
+    coordinatesPotentialNext,
+    fillerCoordinates
+  );
+
+  const expectingPointId = expectIntercept
+    ? pointInterrupt?.currentImgPointId
+    : pointB.currentImgPointId;
+
+  if (!expectingPointId) {
+    throw new Error("expectingPointId is undefined");
+  }
+
+  expect(nextPoint).to.equal(expectingPointId);
+};
+
+function curryRunTestDetermineNext(runFunc: RunTestDetermineNext) {
+  return function (fillerCoordinates?: ICoordinates[]) {
+    return function (coordinatesA: ICoordinates, coordinatesB: ICoordinates) {
+      return function (expectIntercept: boolean) {
+        return function (coordinatesPotentialNext: ICoordinates) {
+          return runFunc(
+            expectIntercept,
+            coordinatesA,
+            coordinatesB,
+            coordinatesPotentialNext,
+            fillerCoordinates
+          );
+        };
+      };
+    };
+  };
+}
+
+const curriedTestDetermineNext =
+  curryRunTestDetermineNext(runTestDetermineNext);
+
 describe("nextPerimeterPoint", () => {
-  const coordinatesA = { x: 10, y: 15 };
-  const coordinatesB = { x: 15, y: 20 };
+  describe("no fill coordinates", () => {
+    const noFiller = curriedTestDetermineNext();
 
-  it("returns the next given point if no others in offset area", () => {
-    const orphanCoordinates = { x: 50, y: 50 };
+    describe("down right edge", () => {
+      const coordinatesA = { x: 10, y: 15 };
+      const coordinatesB = { x: 15, y: 20 };
 
-    const { allPoints, pointB } = setupPoints(coordinatesB, [
-      orphanCoordinates,
-    ]);
+      const noFillerWithEdge = noFiller(coordinatesA, coordinatesB);
 
-    const nextPoint = determineNextPoint(
-      coordinatesA,
-      pointB.currentImgPointId,
-      allPoints
-    );
+      const expectGivenAsNext = noFillerWithEdge(true);
 
-    expect(nextPoint).to.equal(pointB.currentImgPointId);
-  });
+      const expectPointBAsNext = noFillerWithEdge(false);
 
-  describe("inside given points rectangle", () => {
-    it("returns the point between the given points", () => {
-      const coordinateInterrupt = { x: 12, y: 17 };
+      describe("other point beyond bounds rectangle", () => {
+        it("returns pointB as next when other point is far beyond bounds", () => {
+          const orphanCoordinates = { x: 50, y: 50 };
 
-      const { allPoints, pointB } = setupPoints(coordinatesB, [
-        coordinateInterrupt,
-      ]);
+          expectPointBAsNext(orphanCoordinates);
+        });
 
-      const nextPoint = determineNextPoint(
-        coordinatesA,
-        pointB.currentImgPointId,
-        allPoints
-      );
+        it("returns pointB as next when other point is proceeding given points", () => {
+          const coordinateInterrupt = { x: 9, y: 13 };
 
-      const pointInterrupt = [...allPoints.values()].find((point) => {
-        return (
-          point.coordinates.x === coordinateInterrupt.x &&
-          point.coordinates.y === coordinateInterrupt.y
-        );
+          expectPointBAsNext(coordinateInterrupt);
+        });
+        it("returns pointB as next when other point is succeeding given points", () => {
+          const coordinateInterrupt = { x: 16, y: 22 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
       });
 
-      expect(nextPoint).to.equal(pointInterrupt?.currentImgPointId);
-    });
+      describe("other point within bounds rectangle", () => {
+        it("returns other point when other point is between edge points", () => {
+          const coordinateInterrupt = { x: 12, y: 17 };
 
-    it("returns the point left of given points edge", () => {
-      const coordinateInterrupt = { x: 12, y: 16 };
+          expectGivenAsNext(coordinateInterrupt);
+        });
 
-      const { nextPoint, pointInterrupt } = runDetermineNextPoint(
-        coordinatesA,
-        coordinatesB,
-        coordinateInterrupt
-      );
+        it("returns other point when other point is left of edge points", () => {
+          const coordinateInterrupt = { x: 12, y: 16 };
 
-      expect(nextPoint).to.equal(pointInterrupt?.currentImgPointId);
-    });
+          expectGivenAsNext(coordinateInterrupt);
+        });
 
-    it("does not return point to the right of given points edge", () => {
-      const coordinateInterrupt = { x: 11, y: 17 };
+        it("returns pointB as next when other point is right of edge points", () => {
+          const coordinateInterrupt = { x: 11, y: 17 };
 
-      const { allPoints, pointB } = setupPoints(coordinatesB, [
-        coordinateInterrupt,
-      ]);
-
-      const nextPoint = determineNextPoint(
-        coordinatesA,
-        pointB.currentImgPointId,
-        allPoints
-      );
-
-      expect(nextPoint).to.equal(pointB.currentImgPointId);
-    });
-
-    describe("point outside given points rectangle", () => {
-      it("does not return point proceeding given points", () => {
-        const coordinateInterrupt = { x: 9, y: 13 };
-
-        const { allPoints, pointB } = setupPoints(coordinatesB, [
-          coordinateInterrupt,
-        ]);
-
-        const nextPoint = determineNextPoint(
-          coordinatesA,
-          pointB.currentImgPointId,
-          allPoints
-        );
-
-        expect(nextPoint).to.equal(pointB.currentImgPointId);
+          expectPointBAsNext(coordinateInterrupt);
+        });
       });
-      it("does not return point succeeding given points", () => {
-        const coordinateInterrupt = { x: 16, y: 22 };
+    });
 
-        const { allPoints, pointB } = setupPoints(coordinatesB, [
-          coordinateInterrupt,
-        ]);
+    describe("up right edge", () => {
+      const coordinatesA = { x: 10, y: 20 };
+      const coordinatesB = { x: 15, y: 15 };
 
-        const nextPoint = determineNextPoint(
-          coordinatesA,
-          pointB.currentImgPointId,
-          allPoints
-        );
+      const noFillerWithEdge = noFiller(coordinatesA, coordinatesB);
 
-        expect(nextPoint).to.equal(pointB.currentImgPointId);
+      const expectGivenAsNext = noFillerWithEdge(true);
+
+      const expectPointBAsNext = noFillerWithEdge(false);
+
+      describe("other point beyond bounds rectangle", () => {
+        it("returns pointB as next when other point is far beyond bounds", () => {
+          const orphanCoordinates = { x: 50, y: 50 };
+
+          expectPointBAsNext(orphanCoordinates);
+        });
+
+        it("returns pointB as next when other point is proceeding given points", () => {
+          const coordinateInterrupt = { x: 9, y: 21 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
+        it("returns pointB as next when other point is succeeding given points", () => {
+          const coordinateInterrupt = { x: 16, y: 14 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
+      });
+
+      describe("other point within bounds rectangle", () => {
+        it("returns other point when other point is between edge points", () => {
+          const coordinateInterrupt = { x: 12, y: 18 };
+          debugger;
+          expectGivenAsNext(coordinateInterrupt);
+        });
+
+        it("returns other point when other point is left of edge points", () => {
+          const coordinateInterrupt = { x: 13, y: 16 };
+
+          expectGivenAsNext(coordinateInterrupt);
+        });
+
+        it("returns pointB as next when other point is right of edge points", () => {
+          const coordinateInterrupt = { x: 14, y: 18 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
+      });
+    });
+
+    describe("down left edge", () => {
+      const coordinatesA = { x: 15, y: 15 };
+      const coordinatesB = { x: 10, y: 20 };
+
+      const noFillerWithEdge = noFiller(coordinatesA, coordinatesB);
+
+      const expectGivenAsNext = noFillerWithEdge(true);
+
+      const expectPointBAsNext = noFillerWithEdge(false);
+
+      describe("other point beyond bounds rectangle", () => {
+        it("returns pointB as next when other point is far beyond bounds", () => {
+          const orphanCoordinates = { x: 50, y: 50 };
+
+          expectPointBAsNext(orphanCoordinates);
+        });
+
+        it("returns pointB as next when other point is proceeding given points", () => {
+          const coordinateInterrupt = { x: 16, y: 14 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
+        it("returns pointB as next when other point is succeeding given points", () => {
+          const coordinateInterrupt = { x: 9, y: 21 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
+      });
+
+      describe("other point within bounds rectangle", () => {
+        it("returns other point when other point is between edge points", () => {
+          const coordinateInterrupt = { x: 12, y: 18 };
+
+          expectGivenAsNext(coordinateInterrupt);
+        });
+
+        it("returns other point when other point is left of edge points", () => {
+          const coordinateInterrupt = { x: 13, y: 18 };
+
+          expectGivenAsNext(coordinateInterrupt);
+        });
+
+        it("returns pointB as next when other point is right of edge points", () => {
+          const coordinateInterrupt = { x: 12, y: 16 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
+      });
+    });
+
+    describe("up left edge", () => {
+      const coordinatesA = { x: 15, y: 20 };
+      const coordinatesB = { x: 10, y: 15 };
+
+      const noFillerWithEdge = noFiller(coordinatesA, coordinatesB);
+
+      const expectGivenAsNext = noFillerWithEdge(true);
+
+      const expectPointBAsNext = noFillerWithEdge(false);
+
+      describe("other point beyond bounds rectangle", () => {
+        it("returns pointB as next when other point is far beyond bounds", () => {
+          const orphanCoordinates = { x: 50, y: 50 };
+
+          expectPointBAsNext(orphanCoordinates);
+        });
+
+        it("returns pointB as next when other point is proceeding given points", () => {
+          const coordinateInterrupt = { x: 16, y: 21 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
+        it("returns pointB as next when other point is succeeding given points", () => {
+          const coordinateInterrupt = { x: 9, y: 14 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
+      });
+
+      describe("other point within bounds rectangle", () => {
+        it("returns other point when other point is between edge points", () => {
+          const coordinateInterrupt = { x: 13, y: 18 };
+
+          expectGivenAsNext(coordinateInterrupt);
+        });
+
+        it("returns other point when other point is left of edge points", () => {
+          const coordinateInterrupt = { x: 12, y: 18 };
+
+          expectGivenAsNext(coordinateInterrupt);
+        });
+
+        it("returns pointB as next when other point is right of edge points", () => {
+          const coordinateInterrupt = { x: 13, y: 17 };
+
+          expectPointBAsNext(coordinateInterrupt);
+        });
       });
     });
   });

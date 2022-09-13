@@ -72,8 +72,7 @@ export const determineCoordinatesOnEdge = (
       const matchingGradient = hasMatchingGradient(
         lineStart,
         lineEnd,
-        currentCoordinates,
-        0
+        currentCoordinates
       );
 
       if (matchingGradient)
@@ -118,13 +117,14 @@ const hasMatchingGradient = (
   lineStart: ICoordinates,
   lineEnd: ICoordinates,
   subjectCoordinate: ICoordinates,
-  deltaThreshold: number
+  deltaThreshold = 1
 ) => {
   const lineGrad = (lineEnd.y - lineStart.y) / (lineEnd.x - lineStart.x);
   const toPointGrad =
     (subjectCoordinate.y - lineStart.y) / (subjectCoordinate.x - lineStart.x);
 
-  const yComparison = lineGrad * 50 - toPointGrad * 50;
+  const yComparison =
+    Math.trunc(lineGrad * 1000) - Math.trunc(toPointGrad * 1000);
 
   if (Math.abs(yComparison) <= deltaThreshold) {
     return true;
