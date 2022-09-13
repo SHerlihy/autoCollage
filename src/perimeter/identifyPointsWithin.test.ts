@@ -16,8 +16,7 @@ describe("identifyPointsInRectangle", () => {
         { x: 51, y: 149 },
       ]);
       const internalPoints = identifyPointsInRectangle(
-        topLeft,
-        lowRight,
+        [topLeft, lowRight],
         pointsWithinCorners
       );
 
@@ -38,8 +37,7 @@ describe("identifyPointsInRectangle", () => {
         { x: 149, y: 100 },
       ]);
       const internalPoints = identifyPointsInRectangle(
-        topLeft,
-        lowRight,
+        [topLeft, lowRight],
         pointsAlongAxis
       );
 
@@ -58,8 +56,7 @@ describe("identifyPointsInRectangle", () => {
         { x: 50, y: 150 },
       ]);
       const internalPoints = identifyPointsInRectangle(
-        topLeft,
-        lowRight,
+        [topLeft, lowRight],
         pointsOnCorners
       );
 
@@ -86,14 +83,37 @@ describe("identifyPointsInRectangle", () => {
         { x: 50, y: 130 },
       ]);
       const internalPoints = identifyPointsInRectangle(
-        topLeft,
-        lowRight,
+        [topLeft, lowRight],
         pointsAlongEdges
       );
 
       expect(internalPoints).to.exist;
 
       for (const [pointInCornerId] of pointsAlongEdges) {
+        const validatedPoint = internalPoints?.has(pointInCornerId);
+        expect(validatedPoint).to.be.true;
+      }
+    });
+    it("returns point ids just beyond irregular shape", () => {
+      const pointInAddedSpace = coordinatesToDummyPoints([
+        { x: 8, y: 9 },
+        { x: 13, y: 11 },
+        { x: 14, y: 8 },
+        { x: 9, y: 7 },
+      ]);
+      const internalPoints = identifyPointsInRectangle(
+        [
+          { x: 8, y: 8 },
+          { x: 12, y: 12 },
+          { x: 15, y: 9 },
+          { x: 11, y: 5 },
+        ],
+        pointInAddedSpace
+      );
+
+      expect(internalPoints).to.exist;
+
+      for (const [pointInCornerId] of pointInAddedSpace) {
         const validatedPoint = internalPoints?.has(pointInCornerId);
         expect(validatedPoint).to.be.true;
       }
@@ -128,8 +148,7 @@ describe("identifyPointsInRectangle", () => {
         ...lowLeftCoordinates,
       ]);
       const internalPoints = identifyPointsInRectangle(
-        topLeft,
-        lowRight,
+        [topLeft, lowRight],
         pointsBeyondCorners
       );
 
@@ -163,8 +182,7 @@ describe("identifyPointsInRectangle", () => {
         ...lowCoordinates,
       ]);
       const internalPoints = identifyPointsInRectangle(
-        topLeft,
-        lowRight,
+        [topLeft, lowRight],
         pointsBeyondCorners
       );
 

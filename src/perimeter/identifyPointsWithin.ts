@@ -2,11 +2,58 @@ import { determineCoordinatesOnEdge } from "./determineCoordinatesOnEdge";
 import { determineLeftSideCoordinates } from "./determineLeftSideCoordinates";
 import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
 
+const determineRectangleCoordinatesToCoverCoordinates = (
+  givenCoordinates: ICoordinates[]
+) => {
+  const xSeed = givenCoordinates[0].x;
+  const ySeed = givenCoordinates[0].y;
+
+  const accumulatorSeed = {
+    left: xSeed,
+    top: ySeed,
+    right: xSeed,
+    low: ySeed,
+  };
+
+  const maxRect = givenCoordinates.reduce(
+    (acc, { x: currentX, y: currentY }) => {
+      const { left, top, right, low } = acc;
+
+      if (currentX < left) {
+        acc.left = currentX;
+      }
+
+      if (currentX > right) {
+        acc.right = currentX;
+      }
+
+      if (currentY < top) {
+        acc.top = currentY;
+      }
+
+      if (currentY > low) {
+        acc.low = currentY;
+      }
+
+      return acc;
+    },
+    accumulatorSeed
+  );
+
+  const { left, top, right, low } = maxRect;
+
+  return {
+    cornerA: { x: left, y: top },
+    cornerB: { x: right, y: low },
+  };
+};
+
 export const identifyPointsInRectangle = (
-  cornerA: ICoordinates,
-  cornerB: ICoordinates,
+  givenCoordinates: ICoordinates[],
   allPoints: Map<string, IPoint>
 ) => {
+  const { cornerA, cornerB } =
+    determineRectangleCoordinatesToCoverCoordinates(givenCoordinates);
   let pointIdsInXYBounds = new Set<string>();
 
   for (const [pointId, { coordinates }] of allPoints) {
