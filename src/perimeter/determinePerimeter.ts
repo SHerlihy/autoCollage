@@ -1,17 +1,13 @@
 import { determineNextPoint } from "./nextPerimeterPoint";
 import { IPoint, IPointsMap } from "./pointsTypes";
 
-export const determinePerimeterPoints = (
-  allPoints: IPointsMap,
-  offset: number
-) => {
+export const determinePerimeterPoints = (allPoints: IPointsMap) => {
   const topPointId = determineTopPointId(allPoints);
   const nextImagePointId = allPoints.get(topPointId)!.nextImgPointId;
 
   const perimeterPointIds = determineRemainingPerimeterPointIds(
     topPointId,
     nextImagePointId,
-    offset,
     allPoints
   );
 
@@ -21,46 +17,89 @@ export const determinePerimeterPoints = (
 const determineRemainingPerimeterPointIds = (
   startingPointId: string,
   startingNextImagePointId: string,
-  offset: number,
   allPoints: IPointsMap
 ): IPointsMap => {
   const allOtherPoints = new Map([...allPoints]);
   const perimeterPoints = new Map<string, IPoint>();
 
-  const setPerimeterPoints = (
-    currentPointId: string,
-    potentialNextPointId: string
-  ) => {
-    const { coordinates: currentImageCoordinate } =
-      allOtherPoints.get(currentPointId)!;
+  const newCurrentPoint = setFirstPerimeterPoints(
+    startingPointId,
+    startingNextImagePointId,
+    allPoints
+  );
 
-    allOtherPoints.delete(currentPointId);
+  const { nextImgPointId: newNextImgPointId } = newCurrentPoint;
 
-    const nextPointId = determineNextPoint(
-      currentImageCoordinate,
-      potentialNextPointId,
-      allOtherPoints
-    );
+  perimeterPoints.set(startingPointId, newCurrentPoint);
 
-    const nextImagePointId = allPoints.get(nextPointId)!.nextImgPointId;
+  if (newNextImgPointId === startingPointId) {
+    return perimeterPoints;
+  }
 
-    const newCurrentPoint = { ...allPoints.get(currentPointId)! };
-    newCurrentPoint.nextImgPointId = nextPointId;
+  const nextNextId = allPoints.get(newNextImgPointId)!.nextImgPointId;
 
-    perimeterPoints.set(currentPointId, newCurrentPoint);
+  setRemainingPerimeterPoints(
+    startingPointId,
+    newNextImgPointId,
+    nextNextId,
+    allOtherPoints,
+    allPoints,
+    perimeterPoints
+  );
 
-    if (nextPointId === startingPointId) {
-      allOtherPoints.delete(startingPointId);
-      return;
-    }
+  return perimeterPoints;
+};
 
-    setPerimeterPoints(nextPointId, nextImagePointId);
-  };
-
+const setRemainingPerimeterPoints = (
+  startingPointId: string,
+  currentPointId: string,
+  potentialNextPointId: string,
+  allOtherPoints: Map<string, IPoint>,
+  allPoints: IPointsMap,
+  perimeterPoints: Map<string, IPoint>
+) => {
   const { coordinates: currentImageCoordinate } =
-    allOtherPoints.get(startingPointId)!;
+    allOtherPoints.get(currentPointId)!;
 
-  const firstPassPoints = new Map(allOtherPoints);
+  allOtherPoints.delete(currentPointId);
+
+  const nextPointId = determineNextPoint(
+    currentImageCoordinate,
+    potentialNextPointId,
+    allOtherPoints
+  );
+
+  const nextImagePointId = allPoints.get(nextPointId)!.nextImgPointId;
+
+  const newCurrentPoint = { ...allPoints.get(currentPointId)! };
+  newCurrentPoint.nextImgPointId = nextPointId;
+
+  perimeterPoints.set(currentPointId, newCurrentPoint);
+
+  if (nextPointId === startingPointId) {
+    allOtherPoints.delete(startingPointId);
+    return;
+  }
+
+  setRemainingPerimeterPoints(
+    startingPointId,
+    nextPointId,
+    nextImagePointId,
+    allOtherPoints,
+    allPoints,
+    perimeterPoints
+  );
+};
+
+const setFirstPerimeterPoints = (
+  startingPointId: string,
+  startingNextImagePointId: string,
+  allPoints: IPointsMap
+) => {
+  const { coordinates: currentImageCoordinate } =
+    allPoints.get(startingPointId)!;
+
+  const firstPassPoints = new Map(allPoints);
 
   firstPassPoints.delete(startingPointId);
 
@@ -70,20 +109,10 @@ const determineRemainingPerimeterPointIds = (
     firstPassPoints
   );
 
-  const nextImagePointId = allPoints.get(nextPointId)!.nextImgPointId;
-
   const newCurrentPoint = { ...allPoints.get(startingPointId)! };
   newCurrentPoint.nextImgPointId = nextPointId;
 
-  perimeterPoints.set(startingPointId, newCurrentPoint);
-
-  if (nextPointId === startingPointId) {
-    return perimeterPoints;
-  }
-
-  setPerimeterPoints(nextPointId, nextImagePointId);
-
-  return perimeterPoints;
+  return newCurrentPoint;
 };
 
 const determineTopPointId = (points: IPointsMap) => {
