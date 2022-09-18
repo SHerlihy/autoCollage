@@ -201,7 +201,7 @@ const replaceCrevicePointWithClearanceArea = (
 
   const allPointsMap = addMapsToMap(perimeter, clearanceImgPointsMapsArr);
 
-  const newPerimeterPoints = determinePerimeterPoints(allPointsMap, 3);
+  const newPerimeterPoints = determinePerimeterPoints(allPointsMap);
 
   return newPerimeterPoints;
 };

@@ -1,4 +1,4 @@
-import { lineDirection } from "../addImages/generateEdgesMap";
+import { lineDirection } from "../addImages/shapeHelpers";
 import { ICoordinates, IPointsMap } from "./pointsTypes";
 import { getHypotenuseSideFromSides } from "./triganomitryHelpers";
 

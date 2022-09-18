@@ -1,5 +1,10 @@
 import { ICoordinates, IPoint } from "./pointsTypes";
 
+export interface IPrecursorIPoint {
+  coordinates: ICoordinates;
+  id?: string;
+}
+
 export interface IPrecursorDummyIPoint {
   id: string;
   coordinates: ICoordinates;
@@ -49,4 +54,26 @@ export const coordinatesToDummyPoints = (coordinates: ICoordinates[]) => {
   const precursors = generateDummyPointPrecursors(coordinates);
 
   return dummyPrecursorsToPoints(precursors);
+};
+
+export const coordinatesArrToLinkedPointsMap = (
+  precursors: IPrecursorIPoint[]
+) => {
+  const randomIds = precursors.map(() => {
+    return Math.random().toString();
+  });
+
+  const linkedPointsArr = precursors.map(({ coordinates, id }, idx, arr) => {
+    const nextIdx = arr.length - 1 === idx ? 0 : idx + 1;
+    const nextId = arr[nextIdx].id || randomIds[nextIdx];
+
+    const currentId = id ? id : randomIds[idx];
+
+    return [
+      currentId,
+      coordinatesToPoint(coordinates, "001", currentId, nextId),
+    ] as readonly [string, IPoint];
+  });
+
+  return new Map([...linkedPointsArr]);
 };
