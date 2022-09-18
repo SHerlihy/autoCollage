@@ -1,8 +1,8 @@
-import { ICoordinates, IPoint } from "./pointsTypes";
+import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
 
 export interface IPrecursorIPoint {
   coordinates: ICoordinates;
-  id?: string;
+  id?: any;
 }
 
 export interface IPrecursorDummyIPoint {
@@ -58,7 +58,7 @@ export const coordinatesToDummyPoints = (coordinates: ICoordinates[]) => {
 
 export const coordinatesArrToLinkedPointsMap = (
   precursors: IPrecursorIPoint[]
-) => {
+): IPointsMap => {
   const randomIds = precursors.map(() => {
     return Math.random().toString();
   });
