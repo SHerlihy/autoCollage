@@ -46,27 +46,9 @@ export const determineCoordinatesOnEdge = (
       if (distanceToCurrent > edgeDistance) continue;
 
       if (planeEdge === "x") {
-        const coordinateOnEdge = identifyPotentialCoordinateFromXPlaneEdge(
-          currentCoordinates.x,
-          lineStart.y,
-          lineStart.x,
-          lineEnd.x
-        );
-
-        if (coordinateOnEdge) {
-          updatedPotentialPointIds.add(currentPotentialPointId);
-        }
+        updatedPotentialPointIds.add(currentPotentialPointId);
       } else {
-        const coordinateOnEdge = identifyPotentialCoordinateFromYPlaneEdge(
-          currentCoordinates.y,
-          lineStart.x,
-          lineStart.y,
-          lineEnd.y
-        );
-
-        if (coordinateOnEdge) {
-          updatedPotentialPointIds.add(currentPotentialPointId);
-        }
+        updatedPotentialPointIds.add(currentPotentialPointId);
       }
     } else {
       const matchingGradient = hasMatchingGradient(
@@ -85,32 +67,6 @@ export const determineCoordinatesOnEdge = (
   }
 
   return updatedPotentialPointIds;
-};
-
-const identifyPotentialCoordinateFromXPlaneEdge = (
-  potentialNonPlaneValue: number,
-  planeValue: number,
-  startEdgeValue: number,
-  endEdgeValue: number
-) => {
-  if (startEdgeValue < endEdgeValue) {
-    return potentialNonPlaneValue >= planeValue;
-  } else {
-    return potentialNonPlaneValue <= planeValue;
-  }
-};
-
-const identifyPotentialCoordinateFromYPlaneEdge = (
-  potentialNonPlaneValue: number,
-  planeValue: number,
-  startEdgeValue: number,
-  endEdgeValue: number
-) => {
-  if (startEdgeValue < endEdgeValue) {
-    return potentialNonPlaneValue <= planeValue;
-  } else {
-    return potentialNonPlaneValue >= planeValue;
-  }
 };
 
 const hasMatchingGradient = (

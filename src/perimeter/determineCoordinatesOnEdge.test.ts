@@ -376,4 +376,23 @@ describe("determineCoordinatesOnEdge", () => {
       });
     });
   });
+
+  describe("failures from external testing", () => {
+    describe("integration failures", () => {
+      describe("fill crevices", () => {
+        it("returns true for down vertical edge", () => {
+          const onVerticalEdgePointPrecursors = coordinatesToDummyPoints([
+            { x: 20, y: 30 },
+          ]);
+
+          runDetermineOnEdgeTest(
+            new Map(),
+            onVerticalEdgePointPrecursors,
+            { x: 20, y: 5 },
+            { x: 20, y: 34.5 }
+          );
+        });
+      });
+    });
+  });
 });
