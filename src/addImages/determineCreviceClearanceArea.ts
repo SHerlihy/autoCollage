@@ -1,15 +1,11 @@
 import { ICoordinates } from "../perimeter/pointsTypes";
 import {
   radiansFromCoordinates,
-  degreesToRads,
   edgeLengthFromCoordinates,
   edgeLengthFromOppAngleAndEdges,
   getRadiansFromSideLengths,
   getRadiansFromSides,
-  getHypotenuseSideFromSides,
   getNonHypotenuseSideFromSides,
-  getSideLengthFromRadiansAndSide,
-  SOHOppositeSideFromRadians,
   radiansToDegrees,
   getSideLengthFromDegreesAndSide,
   SOHOppositeSideFromDegrees,
@@ -205,7 +201,3 @@ const determineClearance = (
 
   return clearance;
 };
-
-// const orderImgsByMaxWidth = ():imgPointsMap: Map<string, IPoint> => {
-
-// }

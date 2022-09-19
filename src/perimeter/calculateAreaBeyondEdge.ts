@@ -1,4 +1,4 @@
-import { lineDirection } from "../addImages/generateEdgesMap";
+import { lineDirection } from "../addImages/shapeHelpers";
 import { toDecimalPlaces } from "./mathHelpers";
 import { ICoordinates } from "./pointsTypes";
 import {

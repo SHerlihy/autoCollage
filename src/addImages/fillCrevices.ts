@@ -69,13 +69,6 @@ const findEdgesLeftOfCrevices = (agglomeratedImgEdges: IEdgesMap) => {
     ) {
       leftCreviceEdgeIds.add(key);
     }
-
-    if (
-      edge.points.from.type === "crevice" &&
-      edge.points.to.type === "crevice"
-    ) {
-      leftCreviceEdgeIds.add(key);
-    }
   }
 
   return leftCreviceEdgeIds;

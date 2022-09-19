@@ -57,7 +57,8 @@ export const coordinatesToDummyPoints = (coordinates: ICoordinates[]) => {
 };
 
 export const coordinatesArrToLinkedPointsMap = (
-  precursors: IPrecursorIPoint[]
+  precursors: IPrecursorIPoint[],
+  imgId = "001"
 ): IPointsMap => {
   const randomIds = precursors.map(() => {
     return Math.random().toString();
@@ -71,7 +72,7 @@ export const coordinatesArrToLinkedPointsMap = (
 
     return [
       currentId,
-      coordinatesToPoint(coordinates, "001", currentId, nextId),
+      coordinatesToPoint(coordinates, imgId, currentId, nextId),
     ] as readonly [string, IPoint];
   });
 
