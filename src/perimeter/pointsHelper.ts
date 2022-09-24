@@ -24,6 +24,36 @@ export const coordinatesToPoint = (
   } as IPoint;
 };
 
+export const getPerimeterPointIds = (
+  startId: string,
+  perimeterPoints: IPointsMap,
+  endId?: string
+) => {
+  const idsArray = [startId];
+
+  const conga = (currentId: string, lineArr: string[]) => {
+    const currentPoint = perimeterPoints.get(currentId);
+
+    const nextPointId = currentPoint!.nextImgPointId;
+
+    if (nextPointId === startId) {
+      return;
+    }
+
+    lineArr.push(nextPointId);
+
+    if (endId && endId === nextPointId) {
+      return;
+    }
+
+    conga(nextPointId, lineArr);
+  };
+
+  conga(startId, idsArray);
+
+  return idsArray;
+};
+
 const generateDummyPointPrecursors = (coordinates: ICoordinates[]) => {
   const dummyPointIds = coordinates.map(() => {
     return Math.random().toString();

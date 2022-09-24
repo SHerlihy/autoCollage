@@ -1,5 +1,5 @@
-import { coordinatesToPoint } from "../testHelperFunctions";
 import { determineLeftSideCoordinates } from "./determineLeftSideCoordinates";
+import { coordinatesToPoint } from "./pointsHelper";
 import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
 
 interface IPrecursorDummyIPoint {

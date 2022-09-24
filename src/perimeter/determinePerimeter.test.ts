@@ -2,29 +2,8 @@ import Sinon from "cypress/types/sinon";
 import { determinePerimeterPoints } from "./determinePerimeter";
 import { img1 } from "./imagePointExamples";
 import * as nextPerimeterPointModule from "./nextPerimeterPoint";
+import { getPerimeterPointIds } from "./pointsHelper";
 import { IPointsMap } from "./pointsTypes";
-
-const getPerimeterPointIds = (startId: string, perimeterPoints: IPointsMap) => {
-  const idsArray = [startId];
-
-  const conga = (currentId: string, lineArr: string[]) => {
-    const currentPoint = perimeterPoints.get(currentId);
-
-    const nextPointId = currentPoint!.nextImgPointId;
-
-    if (nextPointId === startId) {
-      return;
-    }
-
-    lineArr.push(nextPointId);
-
-    conga(nextPointId, lineArr);
-  };
-
-  conga(startId, idsArray);
-
-  return idsArray;
-};
 
 const nextPerimeterPointClosure = (allPerimeterPoints: string[]) => {
   const perimeterPoints = [...allPerimeterPoints];

@@ -15,27 +15,50 @@ interface IClearanceAreaInfo {
   areaCoordinates: IClearanceArea;
 }
 
+const fillCrevicesClosure = () => {
+  const allClearanceAreas: IClearanceAreaInfo[] = [];
+
+  const determineClearanceAreas = (
+    agglomeratedImgPerimeter: Map<string, IPoint>,
+    clearanceWidth: number
+  ): Map<string, IPoint> => {
+    const clearanceAreas = clearanceAreasFromPerimeter(
+      agglomeratedImgPerimeter,
+      clearanceWidth
+    );
+
+    if (!clearanceAreas) {
+      return agglomeratedImgPerimeter;
+    }
+
+    allClearanceAreas.push(...clearanceAreas);
+
+    const filledPerimeter = replaceCrevicePointWithClearanceArea(
+      agglomeratedImgPerimeter,
+      clearanceAreas
+    );
+
+    return determineClearanceAreas(filledPerimeter, clearanceWidth);
+  };
+
+  return {
+    allClearanceAreas,
+    determineClearanceAreas,
+  };
+};
+
 export const fillCrevices = (
   agglomeratedImgPerimeter: Map<string, IPoint>,
   clearanceWidth: number
-): Map<string, IPoint> => {
-  const clearanceAreas = clearanceAreasFromPerimeter(
+) => {
+  const { allClearanceAreas, determineClearanceAreas } = fillCrevicesClosure();
+
+  const filledPerimeter = determineClearanceAreas(
     agglomeratedImgPerimeter,
     clearanceWidth
   );
 
-  if (!clearanceAreas) {
-    return agglomeratedImgPerimeter;
-  }
-
-  const filledPerimeter = replaceCrevicePointWithClearanceArea(
-    agglomeratedImgPerimeter,
-    clearanceAreas
-  );
-
-  const finalPerimeter = fillCrevices(filledPerimeter, clearanceWidth);
-
-  return finalPerimeter;
+  return { allClearanceAreas, filledPerimeter };
 };
 
 const clearanceAreasFromPerimeter = (
