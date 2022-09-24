@@ -1,16 +1,15 @@
-import { createImgPerimeterFromOrderedCoordinates } from "../testHelperFunctions";
 import { determineNextPoint } from "./nextPerimeterPoint";
-import { coordinatesToPoint } from "./pointsHelper";
+import {
+  coordinatesToPoint,
+  coordinatesArrToLinkedPointsMap,
+} from "./pointsHelper";
 import { ICoordinates } from "./pointsTypes";
 
 const setupPoints = (
   coordinatesB: ICoordinates,
   otherCoordinates: ICoordinates[]
 ) => {
-  const { imgPerimeter: allPoints } = createImgPerimeterFromOrderedCoordinates(
-    "001",
-    otherCoordinates
-  );
+  const allPoints = coordinatesArrToLinkedPointsMap(otherCoordinates);
 
   const pointAPredecessor = [...allPoints.values()][allPoints.size - 1];
   const pointBSuccessor = [...allPoints.values()][0];

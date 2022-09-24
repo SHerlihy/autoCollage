@@ -6,13 +6,13 @@ import { ICoordinates, IPoint } from "../perimeter/pointsTypes";
 import { CreateIds } from "./createIds";
 import {
   determineCreviceClearanceArea,
-  IClearanceArea,
+  ClearanceArea,
 } from "./determineCreviceClearanceArea";
 import { generateEdgesMap, IEdgesMap } from "./generateEdgesMap";
 
 interface IClearanceAreaInfo {
   preCrevicePointId: string;
-  areaCoordinates: IClearanceArea;
+  areaCoordinates: ClearanceArea;
 }
 
 const fillCrevicesClosure = () => {
@@ -236,7 +236,7 @@ const linkInClearanceArea = (
   brPoint.nextImgPointId = postCrevicePointId;
 };
 
-const areaCoordinatesMap = (areaCoordinates: IClearanceArea) => {
+const areaCoordinatesMap = (areaCoordinates: ClearanceArea) => {
   const coordinatesMap = new Map();
 
   const tlKey = CreateIds.getInstance().generateNovelId();

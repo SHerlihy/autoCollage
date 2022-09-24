@@ -86,7 +86,7 @@ export const coordinatesToDummyPoints = (coordinates: ICoordinates[]) => {
   return dummyPrecursorsToPoints(precursors);
 };
 
-export const coordinatesArrToLinkedPointsMap = (
+export const pointPrecursorArrToLinkedPointsMap = (
   precursors: IPrecursorIPoint[],
   imgId = "001"
 ): IPointsMap => {
@@ -107,4 +107,14 @@ export const coordinatesArrToLinkedPointsMap = (
   });
 
   return new Map([...linkedPointsArr]);
+};
+
+export const coordinatesArrToLinkedPointsMap = (
+  coordinatesArr: ICoordinates[]
+) => {
+  const precursorArr = coordinatesArr.map(({ x, y }) => {
+    return { coordinates: { x, y } };
+  });
+
+  return pointPrecursorArrToLinkedPointsMap(precursorArr);
 };

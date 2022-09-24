@@ -1,5 +1,5 @@
 import { ICoordinates, IPointsMap } from "./pointsTypes";
-import { getHypotenuseSideFromSides } from "./triganomitryHelpers";
+import { getHypotenuseSideFromSides } from "./trigonometryHelpers";
 
 // regardless of direction
 export const identifyClosestCoordinateToCoordinate = (

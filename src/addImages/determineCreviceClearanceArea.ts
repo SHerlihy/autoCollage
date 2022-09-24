@@ -1,3 +1,4 @@
+import { withinEpsilonBounds } from "../perimeter/mathHelpers";
 import { ICoordinates } from "../perimeter/pointsTypes";
 import {
   radiansFromCoordinates,
@@ -9,42 +10,16 @@ import {
   radiansToDegrees,
   getSideLengthFromDegreesAndSide,
   SOHOppositeSideFromDegrees,
-} from "../perimeter/triganomitryHelpers";
+} from "../perimeter/trigonometryHelpers";
 
-export interface IClearanceArea {
-  tl: ICoordinates;
-  tr: ICoordinates;
-  br: ICoordinates;
-  bl: ICoordinates;
-}
-
-export const withinEpsilonBounds = (
-  subject: number,
-  target: number,
-  epsilonFactor = 10
-) => {
-  const epsilonBounds = Number.EPSILON * epsilonFactor;
-
-  const upperEpsilon = subject + epsilonBounds;
-  const lowerEpsilon = subject - epsilonBounds;
-
-  if (target === upperEpsilon || target === lowerEpsilon) {
-    return true;
-  }
-
-  if (lowerEpsilon < target && target < upperEpsilon) {
-    return true;
-  }
-
-  return false;
-};
+export type ClearanceArea = { [key: string]: ICoordinates };
 
 export const determineCreviceClearanceArea = (
   topLeft: ICoordinates,
   bottom: ICoordinates,
   topRight: ICoordinates,
   minWidth: number
-): IClearanceArea | undefined => {
+): ClearanceArea | undefined => {
   const capWidth = edgeLengthFromCoordinates(topLeft, topRight);
 
   if (capWidth < minWidth) return;

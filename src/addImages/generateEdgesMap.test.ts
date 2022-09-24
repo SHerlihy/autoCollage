@@ -1,5 +1,5 @@
 import Sinon from "cypress/types/sinon";
-import { coordinatesArrToLinkedPointsMap } from "../perimeter/pointsHelper";
+import { pointPrecursorArrToLinkedPointsMap } from "../perimeter/pointsHelper";
 import { IPointsMap } from "../perimeter/pointsTypes";
 
 import { CreateIds } from "./createIds";
@@ -44,7 +44,7 @@ describe("generateEdgesMap", () => {
   };
 
   describe("perimeter of an image", () => {
-    const pointsMap = coordinatesArrToLinkedPointsMap([
+    const pointsMap = pointPrecursorArrToLinkedPointsMap([
       { coordinates: { x: 5, y: 5 }, id: 1 },
       { coordinates: { x: 5, y: 5 }, id: 2 },
       { coordinates: { x: 5, y: 5 }, id: 3 },
@@ -57,7 +57,7 @@ describe("generateEdgesMap", () => {
   });
 
   describe("rectangle with crevice", () => {
-    const pointsMap = coordinatesArrToLinkedPointsMap([
+    const pointsMap = pointPrecursorArrToLinkedPointsMap([
       { coordinates: { x: 10, y: 10 }, id: 1 },
       { coordinates: { x: 12, y: 10 }, id: 2 },
       { coordinates: { x: 15, y: 13 }, id: 3 },
@@ -73,7 +73,7 @@ describe("generateEdgesMap", () => {
   });
 
   describe("star shape", () => {
-    const pointsMap = coordinatesArrToLinkedPointsMap([
+    const pointsMap = pointPrecursorArrToLinkedPointsMap([
       { coordinates: { x: 10, y: 10 }, id: 1 },
       { coordinates: { x: 12, y: 15 }, id: 2 },
       { coordinates: { x: 20, y: 20 }, id: 3 },

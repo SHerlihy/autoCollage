@@ -1,6 +1,6 @@
 import { hasMatchingGradient, lineDirection } from "../addImages/shapeHelpers";
 import { ICoordinates, IPointsMap } from "./pointsTypes";
-import { getHypotenuseSideFromSides } from "./triganomitryHelpers";
+import { getHypotenuseSideFromSides } from "./trigonometryHelpers";
 
 const distanceBetweenCoordinates = (
   { x: startX, y: startY }: ICoordinates,

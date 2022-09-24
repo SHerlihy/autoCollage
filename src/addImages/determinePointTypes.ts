@@ -4,7 +4,7 @@ import { IPoint, IPointsMap } from "../perimeter/pointsTypes";
 import {
   radiansFromCoordinates,
   radiansToDegrees,
-} from "../perimeter/triganomitryHelpers";
+} from "../perimeter/trigonometryHelpers";
 
 export type AngleType = "crevice" | "acute" | "obtuse" | "right";
 

@@ -5,7 +5,7 @@ import {
   getNonHypotenuseSideFromSides,
   getRadiansFromNonHypotenuseSides,
   SOHOppositeSideFromRadians,
-} from "./triganomitryHelpers";
+} from "./trigonometryHelpers";
 
 export const calculateAreaBeyondEdge = (
   currentImageCoordinate: ICoordinates,

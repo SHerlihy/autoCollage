@@ -1,6 +1,6 @@
 import { toDecimalPlaces } from "../perimeter/mathHelpers";
 import {
-  coordinatesArrToLinkedPointsMap,
+  pointPrecursorArrToLinkedPointsMap,
   getPerimeterPointIds,
 } from "../perimeter/pointsHelper";
 import { ICoordinates, IPointsMap } from "../perimeter/pointsTypes";
@@ -92,7 +92,7 @@ describe("fillCrevices", () => {
     ];
 
     it("returns image perimeter without crevice bottom coordinate", () => {
-      const imgPerimeter = coordinatesArrToLinkedPointsMap(
+      const imgPerimeter = pointPrecursorArrToLinkedPointsMap(
         rectangleTopCreviceCoordinates
       );
 
@@ -114,7 +114,7 @@ describe("fillCrevices", () => {
         { x: 14, y: 5 },
       ];
 
-      const imgPerimeter = coordinatesArrToLinkedPointsMap(
+      const imgPerimeter = pointPrecursorArrToLinkedPointsMap(
         rectangleTopCreviceCoordinates
       );
 
@@ -139,7 +139,7 @@ describe("fillCrevices", () => {
     ];
 
     it("returns image perimeter without crevice bottom coordinates", () => {
-      const imgPerimeter = coordinatesArrToLinkedPointsMap(trekShape, "002");
+      const imgPerimeter = pointPrecursorArrToLinkedPointsMap(trekShape, "002");
 
       const { filledPerimeter: filledImgPerimeter } = fillCrevices(
         imgPerimeter,
@@ -163,7 +163,7 @@ describe("fillCrevices", () => {
     ];
 
     it("returns image perimeter without crevice bottom coordinates", () => {
-      const imgPerimeter = coordinatesArrToLinkedPointsMap(
+      const imgPerimeter = pointPrecursorArrToLinkedPointsMap(
         rectangleCreviceCloseToEdge,
         "002"
       );
@@ -194,7 +194,7 @@ describe("fillCrevices", () => {
     ];
 
     it("returns image perimeter without crevice bottom coordinates", () => {
-      const imgPerimeter = coordinatesArrToLinkedPointsMap(
+      const imgPerimeter = pointPrecursorArrToLinkedPointsMap(
         rectangleWithCrevicedSide,
         "002"
       );
@@ -226,7 +226,7 @@ describe("fillCrevices", () => {
       ];
 
       it("fills twice", () => {
-        const imgPerimeter = coordinatesArrToLinkedPointsMap(
+        const imgPerimeter = pointPrecursorArrToLinkedPointsMap(
           rectangleTopCreviceCoordinates
         );
 
@@ -240,7 +240,7 @@ describe("fillCrevices", () => {
         );
       });
       it("fills thrice", () => {
-        const imgPerimeter = coordinatesArrToLinkedPointsMap(
+        const imgPerimeter = pointPrecursorArrToLinkedPointsMap(
           rectangleTopCreviceCoordinates
         );
 
@@ -268,7 +268,7 @@ describe("fillCrevices", () => {
 
       // TODO: get diagonals and axis behaving the same
       it("fills twice", () => {
-        const imgPerimeter = coordinatesArrToLinkedPointsMap(
+        const imgPerimeter = pointPrecursorArrToLinkedPointsMap(
           diamondTopLeftCreviceCoordinates
         );
 
@@ -282,7 +282,7 @@ describe("fillCrevices", () => {
         );
       });
       it("fills thrice", () => {
-        const imgPerimeter = coordinatesArrToLinkedPointsMap(
+        const imgPerimeter = pointPrecursorArrToLinkedPointsMap(
           diamondTopLeftCreviceCoordinates
         );
 

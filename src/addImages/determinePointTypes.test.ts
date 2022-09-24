@@ -1,4 +1,4 @@
-import { coordinatesArrToLinkedPointsMap } from "../perimeter/pointsHelper";
+import { pointPrecursorArrToLinkedPointsMap } from "../perimeter/pointsHelper";
 import { determinePointTypes } from "./determinePointTypes";
 
 describe("determinePointTypes", () => {
@@ -10,7 +10,7 @@ describe("determinePointTypes", () => {
       { coordinates: { x: 50, y: 100 } },
     ];
     const squarePerimeterPoints =
-      coordinatesArrToLinkedPointsMap(squareCoordinates);
+      pointPrecursorArrToLinkedPointsMap(squareCoordinates);
 
     it("identifies all points as right", () => {
       const typedPerimeterPoints = determinePointTypes(squarePerimeterPoints);
@@ -28,7 +28,7 @@ describe("determinePointTypes", () => {
       { coordinates: { x: 80, y: 70 } },
     ];
     const rectanglePerimeterPoints =
-      coordinatesArrToLinkedPointsMap(rectangleCoordinates);
+      pointPrecursorArrToLinkedPointsMap(rectangleCoordinates);
 
     it("identifies all points as right", () => {
       const typedPerimeterPoints = determinePointTypes(
@@ -49,7 +49,7 @@ describe("determinePointTypes", () => {
       { coordinates: { x: 60, y: 130 } },
     ];
     const pentagonPerimeterPoints =
-      coordinatesArrToLinkedPointsMap(pentagonCoordinates);
+      pointPrecursorArrToLinkedPointsMap(pentagonCoordinates);
 
     it("identifies all points as obtuse", () => {
       const typedPerimeterPoints = determinePointTypes(pentagonPerimeterPoints);
@@ -78,7 +78,7 @@ describe("determinePointTypes", () => {
       { coordinates: { x: 100, y: 100 } },
       { coordinates: { x: 50, y: 100 } },
     ];
-    const creviceSquarePerimeterPoints = coordinatesArrToLinkedPointsMap(
+    const creviceSquarePerimeterPoints = pointPrecursorArrToLinkedPointsMap(
       creviceSquareCoordinates
     );
 
@@ -145,7 +145,7 @@ describe("determinePointTypes", () => {
     ];
 
     const shurikenPerimeterPoints =
-      coordinatesArrToLinkedPointsMap(shurikenCoordinates);
+      pointPrecursorArrToLinkedPointsMap(shurikenCoordinates);
 
     it("identifies crevices as crevice", () => {
       const typedPerimeterPoints = determinePointTypes(shurikenPerimeterPoints);
@@ -181,7 +181,7 @@ describe("determinePointTypes", () => {
     ];
 
     const triAlcovePerimeterPoints =
-      coordinatesArrToLinkedPointsMap(triAlcoveCoordinates);
+      pointPrecursorArrToLinkedPointsMap(triAlcoveCoordinates);
 
     it("identifies alcove points as crevice", () => {
       const typedPerimeterPoints = determinePointTypes(
