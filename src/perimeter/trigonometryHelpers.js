@@ -27,7 +27,7 @@ export const getHypotenuseSideFromSides = (sideA, sideB) => {
 };
 
 export const getDegreesFromNonHypotenuseSides = (opposite, adjacent) => {
-  const rads = getRadiansFromNonHypotenuseSides();
+  const rads = getRadiansFromNonHypotenuseSides(opposite, adjacent);
 
   return radiansToDegrees(rads);
 };

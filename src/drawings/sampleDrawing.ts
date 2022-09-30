@@ -1,22 +1,32 @@
-import { getFulfilled, loadImages } from "./imageLoader";
-import screamImg from "../../src/assets/img_the_scream.jpg";
+import { getFulfilled } from "./imageLoader";
 
-const { getLoadedImages } = loadImages([screamImg]);
+interface IPositionedImage {
+  image: HTMLImageElement;
+  x: number;
+  y: number;
+}
 
-export async function drawAllItems(ctx) {
-  const loadedImages = await getLoadedImages();
+export const drawAllItems = async (
+  ctx: CanvasRenderingContext2D,
+  loadedImages: PromiseSettledResult<HTMLImageElement>[]
+) => {
   const successfullyLoaded = getFulfilled(loadedImages);
   const positionedImages = positioningAlgorithm(successfullyLoaded);
   drawLoadedImages(ctx, positionedImages);
-}
+};
 
-const drawLoadedImages = function (ctx, loadedImages) {
+// remember idea of using gradient on perimeter points and an offset to fill after fillCrevices
+
+const drawLoadedImages = (
+  ctx: CanvasRenderingContext2D,
+  loadedImages: Array<IPositionedImage>
+) => {
   for (const { image, x, y } of loadedImages) {
     ctx.drawImage(image, x, y);
   }
 };
 
-const gridPositions = (maxDimension) => {
+const gridPositions = (maxDimension: number) => {
   const currentWidth = window.innerWidth;
   const currentHeight = window.innerHeight;
 
@@ -40,7 +50,7 @@ const gridPositions = (maxDimension) => {
   return positions;
 };
 
-const getMaxDimension = (images) => {
+const getMaxDimension = (images: Array<HTMLImageElement>) => {
   return images.reduce((acc, image) => {
     const { width, height } = image;
 
@@ -54,25 +64,8 @@ const getMaxDimension = (images) => {
   }, 0);
 };
 
-const positioningAlgorithm = function (images) {
+const positioningAlgorithm = function (images: Array<HTMLImageElement>) {
   const maxDimension = getMaxDimension(images);
-
-  // const curPositionCo = maxDimension / 2;
-
-  // const imagesDimensions = images.map((image, index) => {
-  //   const x = index * maxDimension + curPositionCo;
-  //   const y = index * maxDimension + curPositionCo;
-
-  //   console.log(image);
-
-  //   return {
-  //     image,
-  //     x,
-  //     y,
-  //   };
-  // });
-
-  // return imagesDimensions;
 
   const positions = gridPositions(maxDimension);
 
