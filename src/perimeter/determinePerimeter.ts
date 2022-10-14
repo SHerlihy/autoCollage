@@ -1,14 +1,16 @@
+import { getMapFromMap } from "./mapHelpers";
 import { determineNextPoint } from "./nextPerimeterPoint";
+import { determineTopPointId } from "./pointsHelper";
 import { IPoint, IPointsMap } from "./pointsTypes";
 
-export const determinePerimeterPoints = (allPoints: IPointsMap) => {
-  const topPointId = determineTopPointId(allPoints);
-  const nextImagePointId = allPoints.get(topPointId)!.nextImgPointId;
+export const determinePerimeterPoints = (perimeterPoints: IPointsMap) => {
+  const topPointId = determineTopPointId(perimeterPoints);
+  const nextImagePointId = perimeterPoints.get(topPointId)!.nextImgPointId;
 
   const perimeterPointIds = determineRemainingPerimeterPointIds(
     topPointId,
     nextImagePointId,
-    allPoints
+    perimeterPoints
   );
 
   return perimeterPointIds;
@@ -19,7 +21,6 @@ const determineRemainingPerimeterPointIds = (
   startingNextImagePointId: string,
   allPoints: IPointsMap
 ): IPointsMap => {
-  const allOtherPoints = new Map([...allPoints]);
   const perimeterPoints = new Map<string, IPoint>();
 
   const newCurrentPoint = setFirstPerimeterPoints(
@@ -42,7 +43,6 @@ const determineRemainingPerimeterPointIds = (
     startingPointId,
     newNextImgPointId,
     nextNextId,
-    allOtherPoints,
     allPoints,
     perimeterPoints
   );
@@ -54,22 +54,31 @@ const setRemainingPerimeterPoints = (
   startingPointId: string,
   currentPointId: string,
   potentialNextPointId: string,
-  allOtherPoints: Map<string, IPoint>,
   allPoints: IPointsMap,
-  perimeterPoints: Map<string, IPoint>
+  perimeterPoints: Map<string, IPoint>,
+  prevPointId?: string
 ) => {
-  const { coordinates: currentImageCoordinate } =
-    allOtherPoints.get(currentPointId)!;
+  const potentialNextPoint = allPoints.get(potentialNextPointId)!;
 
-  allOtherPoints.delete(currentPointId);
+  const currentPoint = allPoints.get(currentPointId)!;
 
-  const nextPointId = determineNextPoint(
-    currentImageCoordinate,
-    potentialNextPointId,
-    allOtherPoints
+  const { coordinates: currentImageCoordinate } = currentPoint;
+
+  const allOtherPointIds = [...allPoints.keys()].filter(
+    (allId) => allId !== currentPointId && allId !== prevPointId
   );
 
-  const nextImagePointId = allPoints.get(nextPointId)!.nextImgPointId;
+  const { addToSubMap, getSubMap } = getMapFromMap(allPoints);
+
+  addToSubMap(allOtherPointIds);
+
+  let allOtherPoints = getSubMap();
+
+  let nextPointId = determineNextPoint(
+    currentImageCoordinate,
+    potentialNextPoint,
+    allOtherPoints
+  );
 
   const newCurrentPoint = { ...allPoints.get(currentPointId)! };
   newCurrentPoint.nextImgPointId = nextPointId;
@@ -77,17 +86,18 @@ const setRemainingPerimeterPoints = (
   perimeterPoints.set(currentPointId, newCurrentPoint);
 
   if (nextPointId === startingPointId) {
-    allOtherPoints.delete(startingPointId);
     return;
   }
+
+  const nextPointPotentialNextId = allPoints.get(nextPointId)!.nextImgPointId;
 
   setRemainingPerimeterPoints(
     startingPointId,
     nextPointId,
-    nextImagePointId,
-    allOtherPoints,
+    nextPointPotentialNextId,
     allPoints,
-    perimeterPoints
+    perimeterPoints,
+    currentPointId
   );
 };
 
@@ -96,6 +106,8 @@ const setFirstPerimeterPoints = (
   startingNextImagePointId: string,
   allPoints: IPointsMap
 ) => {
+  const potentialNextPoint = allPoints.get(startingNextImagePointId)!;
+
   const { coordinates: currentImageCoordinate } =
     allPoints.get(startingPointId)!;
 
@@ -105,7 +117,7 @@ const setFirstPerimeterPoints = (
 
   const nextPointId = determineNextPoint(
     currentImageCoordinate,
-    startingNextImagePointId,
+    potentialNextPoint,
     firstPassPoints
   );
 
@@ -113,18 +125,4 @@ const setFirstPerimeterPoints = (
   newCurrentPoint.nextImgPointId = nextPointId;
 
   return newCurrentPoint;
-};
-
-const determineTopPointId = (points: IPointsMap) => {
-  const topPoint = [...points.entries()].reduce((topId, [curId, curVal]) => {
-    const topVal = points.get(topId) || null;
-
-    if (topVal === null || curVal.coordinates.y < topVal.coordinates.y) {
-      topId = curId;
-    }
-
-    return topId;
-  }, "");
-
-  return topPoint;
 };
