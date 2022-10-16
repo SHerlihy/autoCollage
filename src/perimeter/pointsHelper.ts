@@ -118,3 +118,17 @@ export const coordinatesArrToLinkedPointsMap = (
 
   return pointPrecursorArrToLinkedPointsMap(precursorArr);
 };
+
+export const determineTopPointId = (points: IPointsMap) => {
+  const topPoint = [...points.entries()].reduce((topId, [curId, curVal]) => {
+    const topVal = points.get(topId) || null;
+
+    if (topVal === null || curVal.coordinates.y < topVal.coordinates.y) {
+      topId = curId;
+    }
+
+    return topId;
+  }, "");
+
+  return topPoint;
+};

@@ -19,3 +19,26 @@ export const addMapsToMap = <T, V>(
 
   return allElementsMap;
 };
+
+export const getMapFromMap = <T, V>(originMap: Map<T, V>) => {
+  const subMap = new Map<T, V>();
+
+  const addToSubMap = (keys: T[]) => {
+    for (const key of keys) {
+      const originValue = originMap.get(key);
+
+      if (originValue) {
+        subMap.set(key, originValue);
+      }
+    }
+  };
+
+  const getSubMap = () => {
+    return subMap;
+  };
+
+  return {
+    addToSubMap,
+    getSubMap,
+  };
+};
