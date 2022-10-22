@@ -1,6 +1,6 @@
 import { determineLeftSideCoordinates } from "./determineLeftSideCoordinates";
 import { coordinatesToPoint } from "./pointsHelper";
-import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
+import { ICoordinates, IPoint } from "./pointsTypes";
 
 interface IPrecursorDummyIPoint {
   id: string;
@@ -167,6 +167,7 @@ describe("determineLeftSideCoordinate", () => {
           { x: 149, y: 51 },
         ]);
         it("up right edge", () => {
+          debugger;
           runDetermineLeftTest(
             onBackSlashEdgePointPrecursors,
             [],
@@ -175,6 +176,7 @@ describe("determineLeftSideCoordinate", () => {
           );
         });
         it("down left edge", () => {
+          debugger;
           runDetermineLeftTest(
             onBackSlashEdgePointPrecursors,
             [],
@@ -319,19 +321,19 @@ describe("determineLeftSideCoordinate", () => {
 
     describe("diagonal edges", () => {
       const leftUpPointPrecursors = generateDummyPointPrecursors([
-        { x: 149, y: 48 },
+        { x: 148, y: 49 },
         { x: 100, y: 99 },
-        { x: 49, y: 148 },
+        { x: 51, y: 148 },
       ]);
 
       const rightDownPointPrecursors = generateDummyPointPrecursors([
         { x: 149, y: 52 },
         { x: 100, y: 101 },
-        { x: 49, y: 152 },
+        { x: 52, y: 149 },
       ]);
 
       const leftDownPointPrecursors = generateDummyPointPrecursors([
-        { x: 149, y: 152 },
+        { x: 148, y: 149 },
         { x: 100, y: 101 },
         { x: 49, y: 52 },
       ]);
@@ -339,7 +341,7 @@ describe("determineLeftSideCoordinate", () => {
       const rightUpPointPrecursors = generateDummyPointPrecursors([
         { x: 149, y: 148 },
         { x: 100, y: 99 },
-        { x: 49, y: 48 },
+        { x: 52, y: 51 },
       ]);
 
       describe("up right edge", () => {

@@ -103,9 +103,9 @@ const isLeftOfEdgeGradient = (
     }
   }
 
-  const lineGrad = (lineEnd.y - lineStart.y) / (lineEnd.x - lineStart.x);
+  const lineGrad = (lineEnd.x - lineStart.x) / (lineEnd.y - lineStart.y);
   const toPointGrad =
-    (subjectCoordinate.y - lineStart.y) / (subjectCoordinate.x - lineStart.x);
+    (subjectCoordinate.x - lineStart.x) / (subjectCoordinate.y - lineStart.y);
 
   const yComparison = lineGrad * 50 - toPointGrad * 50;
 
@@ -115,7 +115,7 @@ const isLeftOfEdgeGradient = (
 
   if (yDirection === "down" && xDirection === "right") {
     if (yToPointDirection === "down" && xToPointDirection === "right") {
-      return toPointGrad < lineGrad;
+      return toPointGrad > lineGrad;
     }
     if (yToPointDirection === "up" && xToPointDirection === "left") {
       return toPointGrad > lineGrad;
@@ -124,16 +124,16 @@ const isLeftOfEdgeGradient = (
 
   if (yDirection === "down" && xDirection === "left") {
     if (yToPointDirection === "down" && xToPointDirection === "left") {
-      return toPointGrad < lineGrad;
+      return toPointGrad > lineGrad;
     }
     if (yToPointDirection === "up" && xToPointDirection === "right") {
-      return toPointGrad > lineGrad;
+      return toPointGrad < lineGrad;
     }
   }
 
   if (yDirection === "up" && xDirection === "left") {
     if (yToPointDirection === "up" && xToPointDirection === "left") {
-      return toPointGrad < lineGrad;
+      return toPointGrad > lineGrad;
     }
     if (yToPointDirection === "down" && xToPointDirection === "right") {
       return toPointGrad > lineGrad;
@@ -142,10 +142,10 @@ const isLeftOfEdgeGradient = (
 
   if (yDirection === "up" && xDirection === "right") {
     if (yToPointDirection === "up" && xToPointDirection === "right") {
-      return toPointGrad < lineGrad;
+      return toPointGrad > lineGrad;
     }
     if (yToPointDirection === "down" && xToPointDirection === "left") {
-      return toPointGrad > lineGrad;
+      return toPointGrad < lineGrad;
     }
   }
 };
