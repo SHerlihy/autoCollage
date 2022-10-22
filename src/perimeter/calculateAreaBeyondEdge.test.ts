@@ -120,4 +120,134 @@ describe("calculateAreaBeyondEdge", () => {
       });
     });
   });
+
+  describe("precision", () => {
+    const hypotenuse = 7.0710678119;
+    // const rightAngleEdgelengths = 5;
+
+    // 0.5 gradient
+    const shortLength = 3.16227;
+    const longLength = 6.32456;
+
+    const midMid = { x: 0, y: 0 };
+
+    describe("top left", () => {
+      it("gradient close to horizontal", () => {
+        const x = -30;
+        const y = -15;
+
+        const { BR } = setupTest(midMid, { x, y }, hypotenuse);
+
+        expect(toDecimalPlaces(BR.x, 10)).to.equal(
+          toDecimalPlaces(x - longLength, 10)
+        );
+        expect(toDecimalPlaces(BR.y, 10)).to.equal(
+          toDecimalPlaces(y - shortLength, 10)
+        );
+      });
+      it("gradient close to vertical", () => {
+        const x = -15;
+        const y = -30;
+
+        const { BR } = setupTest(midMid, { x, y }, hypotenuse);
+
+        expect(toDecimalPlaces(BR.x, 10)).to.equal(
+          toDecimalPlaces(x - shortLength, 10)
+        );
+        expect(toDecimalPlaces(BR.y, 10)).to.equal(
+          toDecimalPlaces(y - longLength, 10)
+        );
+      });
+    });
+
+    describe("top right", () => {
+      it("gradient close to horizontal", () => {
+        const x = 30;
+        const y = -15;
+
+        const { BR } = setupTest(midMid, { x, y }, hypotenuse);
+
+        expect(toDecimalPlaces(BR.x, 10)).to.equal(
+          toDecimalPlaces(x + longLength, 10)
+        );
+        expect(toDecimalPlaces(BR.y, 10)).to.equal(
+          toDecimalPlaces(y - shortLength, 10)
+        );
+      });
+      it("gradient close to vertical", () => {
+        const x = 15;
+        const y = -30;
+
+        const { BR } = setupTest(midMid, { x, y }, hypotenuse);
+
+        expect(toDecimalPlaces(BR.x, 10)).to.equal(
+          toDecimalPlaces(x + shortLength, 10)
+        );
+        expect(toDecimalPlaces(BR.y, 10)).to.equal(
+          toDecimalPlaces(y - longLength, 10)
+        );
+      });
+    });
+
+    describe("low right", () => {
+      it("gradient close to horizontal", () => {
+        const x = 30;
+        const y = 15;
+
+        const { BR } = setupTest(midMid, { x, y }, hypotenuse);
+
+        expect(toDecimalPlaces(BR.x, 10)).to.equal(
+          toDecimalPlaces(x + longLength, 10)
+        );
+        expect(toDecimalPlaces(BR.y, 10)).to.equal(
+          toDecimalPlaces(y + shortLength, 10)
+        );
+      });
+      it("gradient close to vertical", () => {
+        const x = 15;
+        const y = 30;
+
+        const { BR } = setupTest(midMid, { x, y }, hypotenuse);
+
+        expect(toDecimalPlaces(BR.x, 10)).to.equal(
+          toDecimalPlaces(x + shortLength, 10)
+        );
+        expect(toDecimalPlaces(BR.y, 10)).to.equal(
+          toDecimalPlaces(y + longLength, 10)
+        );
+      });
+    });
+
+    describe("low left", () => {
+      it("gradient close to horizontal", () => {
+        const x = -30;
+        const y = 15;
+
+        const { BR } = setupTest(midMid, { x, y }, hypotenuse);
+
+        expect(toDecimalPlaces(BR.x, 10)).to.equal(
+          toDecimalPlaces(x - longLength, 10)
+        );
+        expect(toDecimalPlaces(BR.y, 10)).to.equal(
+          toDecimalPlaces(y + shortLength, 10)
+        );
+      });
+      it("gradient close to vertical", () => {
+        const x = -15;
+        const y = 30;
+
+        const { BR } = setupTest(midMid, { x, y }, hypotenuse);
+
+        expect(toDecimalPlaces(BR.x, 10)).to.equal(
+          toDecimalPlaces(x - shortLength, 10)
+        );
+        expect(toDecimalPlaces(BR.y, 10)).to.equal(
+          toDecimalPlaces(y + longLength, 10)
+        );
+      });
+    });
+  });
 });
+
+// 35 5 10.8333 20.5
+// 35 5 8.2613 23.788

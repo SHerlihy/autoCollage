@@ -115,11 +115,11 @@ const validAreaOnDiagonalLine = (
 
   const hyp = Math.abs(offset);
 
-  const xLength = toDecimalPlaces(
+  const yLength = toDecimalPlaces(
     SOHOppositeSideFromRadians(hyp, oppositeRadians)
   );
 
-  const yLength = toDecimalPlaces(getNonHypotenuseSideFromSides(hyp, xLength));
+  const xLength = toDecimalPlaces(getNonHypotenuseSideFromSides(hyp, yLength));
 
   const BL = { x: currentX, y: currentY };
 
