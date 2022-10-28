@@ -291,7 +291,7 @@ describe("fillCrevices", () => {
         expectCoordinatesWithinGradient(
           "creviceLeft",
           "creviceRight",
-          10,
+          8,
           filledPerimeter
         );
       });

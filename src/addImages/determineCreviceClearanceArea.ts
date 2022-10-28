@@ -1,16 +1,13 @@
-import { withinEpsilonBounds } from "../perimeter/mathHelpers";
 import { ICoordinates } from "../perimeter/pointsTypes";
 import {
   radiansFromCoordinates,
   edgeLengthFromCoordinates,
   edgeLengthFromOppAngleAndEdges,
   getRadiansFromSideLengths,
-  getRadiansFromSides,
-  getNonHypotenuseSideFromSides,
   radiansToDegrees,
   getSideLengthFromDegreesAndSide,
-  SOHOppositeSideFromDegrees,
 } from "../perimeter/trigonometryHelpers";
+import { determineCoordinatesAlongLine } from "./shapeHelpers";
 
 export type ClearanceArea = { [key: string]: ICoordinates };
 
@@ -103,55 +100,7 @@ export const determineCreviceClearanceArea = (
   };
 };
 
-const determineCoordinatesAlongLine = (
-  coordinatesA: ICoordinates,
-  coordinatesB: ICoordinates,
-  lengthToCoordinate: number
-): ICoordinates => {
-  const lengthAB = edgeLengthFromCoordinates(coordinatesA, coordinatesB);
 
-  const xAB = coordinatesB.x - coordinatesA.x;
-  const yAB = coordinatesB.y - coordinatesA.y;
-
-  if (withinEpsilonBounds(xAB, 0)) {
-    const y =
-      yAB < 0
-        ? coordinatesA.y - lengthToCoordinate
-        : coordinatesA.y + lengthToCoordinate;
-
-    return {
-      x: coordinatesA.x,
-      y,
-    };
-  }
-
-  if (withinEpsilonBounds(yAB, 0)) {
-    const x =
-      xAB < 0
-        ? coordinatesA.x - lengthToCoordinate
-        : coordinatesA.x + lengthToCoordinate;
-    return {
-      x,
-      y: coordinatesA.y,
-    };
-  }
-
-  const oppDegrees = radiansToDegrees(
-    getRadiansFromSides(Math.abs(xAB), lengthAB, Math.abs(yAB))
-  );
-
-  const xANew = SOHOppositeSideFromDegrees(lengthToCoordinate, oppDegrees);
-
-  const yANew = getNonHypotenuseSideFromSides(lengthToCoordinate, xANew);
-
-  const x = xAB < 0 ? coordinatesA.x - xANew : coordinatesA.x + xANew;
-  const y = yAB < 0 ? coordinatesA.y - yANew : coordinatesA.y + yANew;
-
-  return {
-    x,
-    y,
-  };
-};
 
 const determineClearance = (
   subjectEdgeLength: number,
