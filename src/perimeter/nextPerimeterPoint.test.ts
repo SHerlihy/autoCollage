@@ -43,11 +43,7 @@ const runDetermineNextPoint = (
 
   const { allPoints, pointB } = setupPoints(coordinatesB, allOtherCoordinates);
 
-  const nextPoint = determineNextPoint(
-    coordinatesA,
-    pointB.currentImgPointId,
-    allPoints
-  );
+  const nextPoint = determineNextPoint(coordinatesA, pointB, allPoints);
 
   const pointInterrupt = [...allPoints.values()].find((point) => {
     return (

@@ -4,16 +4,16 @@ import {
   identifyPointIdsWithinBounds,
   identifyPointsInRectangle,
 } from "./identifyPointsWithin";
-import { ICoordinates, IPointsMap } from "./pointsTypes";
+import { getMapFromMap } from "./mapHelpers";
+import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
 
 export const determineNextPoint = (
   currentImageCoordinate: ICoordinates,
-  nextImagePointId: string,
-  allOtherPoints: IPointsMap,
+  potentialNextPoint: IPoint,
+  allPoints: IPointsMap,
   areaBeyondEdgeThreshold = 5
 ) => {
-  const { coordinates: nextImageCoordinate } =
-    allOtherPoints.get(nextImagePointId)!;
+  const { coordinates: nextImageCoordinate } = potentialNextPoint;
 
   const thresholdArea = calculateAreaBeyondEdge(
     currentImageCoordinate,
@@ -27,28 +27,22 @@ export const determineNextPoint = (
   // going into next more complex algorithm
   const pointIdsInRectangle = identifyPointsInRectangle(
     [...Object.values(thresholdArea)],
-    allOtherPoints
-  );
-
-  if (pointIdsInRectangle === null) {
-    return nextImagePointId;
-  }
+    allPoints
+  )!;
 
   const areaBoundedPointIds = identifyPointIdsWithinBounds(
     [BL, BR, TR, TL],
     pointIdsInRectangle,
-    allOtherPoints
-  );
+    allPoints
+  )!;
 
-  if (areaBoundedPointIds === null) {
-    return nextImagePointId;
-  }
+  const { addToSubMap, getSubMap } = getMapFromMap(allPoints);
+
+  addToSubMap([...areaBoundedPointIds]);
 
   const nextPointId = identifyClosestCoordinateToCoordinate(
     currentImageCoordinate,
-    nextImagePointId,
-    areaBoundedPointIds,
-    allOtherPoints
+    getSubMap()
   );
 
   return nextPointId;
