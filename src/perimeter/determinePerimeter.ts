@@ -1,4 +1,3 @@
-import { getMapFromMap } from "./mapHelpers";
 import { determineNextPoint } from "./nextPerimeterPoint";
 import { determineTopPointId } from "./pointsHelper";
 import { IPoint, IPointsMap } from "./pointsTypes";
@@ -39,11 +38,14 @@ const determineRemainingPerimeterPointIds = (
 
   const nextNextId = allPoints.get(newNextImgPointId)!.nextImgPointId;
 
+  const allOtherPoints = new Map(allPoints);
+
   setRemainingPerimeterPoints(
     startingPointId,
     newNextImgPointId,
     nextNextId,
     allPoints,
+    allOtherPoints,
     perimeterPoints
   );
 
@@ -55,8 +57,8 @@ const setRemainingPerimeterPoints = (
   currentPointId: string,
   potentialNextPointId: string,
   allPoints: IPointsMap,
-  perimeterPoints: Map<string, IPoint>,
-  prevPointId?: string
+  allOtherPoints: IPointsMap,
+  perimeterPoints: Map<string, IPoint>
 ) => {
   const potentialNextPoint = allPoints.get(potentialNextPointId)!;
 
@@ -64,21 +66,13 @@ const setRemainingPerimeterPoints = (
 
   const { coordinates: currentImageCoordinate } = currentPoint;
 
-  const allOtherPointIds = [...allPoints.keys()].filter(
-    (allId) => allId !== currentPointId && allId !== prevPointId
-  );
-
-  const { addToSubMap, getSubMap } = getMapFromMap(allPoints);
-
-  addToSubMap(allOtherPointIds);
-
-  let allOtherPoints = getSubMap();
-
   let nextPointId = determineNextPoint(
     currentImageCoordinate,
     potentialNextPoint,
     allOtherPoints
   );
+
+  allOtherPoints.delete(nextPointId);
 
   const newCurrentPoint = { ...allPoints.get(currentPointId)! };
   newCurrentPoint.nextImgPointId = nextPointId;
@@ -96,8 +90,8 @@ const setRemainingPerimeterPoints = (
     nextPointId,
     nextPointPotentialNextId,
     allPoints,
-    perimeterPoints,
-    currentPointId
+    allOtherPoints,
+    perimeterPoints
   );
 };
 
