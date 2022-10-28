@@ -118,7 +118,7 @@ const isLeftOfEdgeGradient = (
       return toPointGrad > lineGrad;
     }
     if (yToPointDirection === "up" && xToPointDirection === "left") {
-      return toPointGrad > lineGrad;
+      return toPointGrad < lineGrad;
     }
   }
 
@@ -145,7 +145,7 @@ const isLeftOfEdgeGradient = (
       return toPointGrad > lineGrad;
     }
     if (yToPointDirection === "down" && xToPointDirection === "left") {
-      return toPointGrad < lineGrad;
+      return toPointGrad > lineGrad;
     }
   }
 };
@@ -162,9 +162,6 @@ const isLeftOfEdgeDirectional = (
     lineDirection(lineStart, subjectCoordinate);
 
   if (xDirectionBase === "vertical") {
-    if (xDirectionPoint === "vertical") {
-      return false;
-    }
     if (yDirectionBase === "down") {
       return subjectCoordinate.x > lineStart.x;
     } else {
@@ -173,9 +170,6 @@ const isLeftOfEdgeDirectional = (
   }
 
   if (yDirectionBase === "horizontal") {
-    if (yDirectionPoint === "horizontal") {
-      return false;
-    }
     if (xDirectionBase === "right") {
       return subjectCoordinate.y < lineStart.y;
     } else {

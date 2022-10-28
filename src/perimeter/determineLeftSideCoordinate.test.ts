@@ -55,29 +55,48 @@ const runDetermineLeftTest = (
     endCoordinates
   );
 
+  if (validPointIds === null) {
+    expect(potentialSuitableCoordinates.length).to.equal(0);
+    return;
+  }
+
   if (!potentialSuitableCoordinates.length) {
     expect(validPointIds).to.equal(null);
     return;
   }
 
   if (potentialUnsuitableCoordinates.length) {
-    const validatedUnSuitableIds = [...validPointIds!].map((validId) => {
-      return potentialUnsuitableCoordinates.find(
+    const validatedUnSuitableIds = [...validPointIds].reduce((acc, validId) => {
+      const isPotentialUnsuitable = potentialUnsuitableCoordinates.find(
         (unsuitable) => unsuitable.id === validId
       );
-    });
 
-    expect(validatedUnSuitableIds!.length).to.equal(0);
+      if (isPotentialUnsuitable) {
+        acc.unshift(isPotentialUnsuitable);
+      }
+
+      return acc;
+    }, [] as Array<IPrecursorDummyIPoint>);
+
+    expect(validatedUnSuitableIds.length).to.equal(0);
   }
 
   if (potentialSuitableCoordinates.length) {
-    const validatedSuitableIds = [...validPointIds!].every((validId) => {
-      return potentialSuitableCoordinates.find(
+    const validatedSuitableIds = [...validPointIds].reduce((acc, validId) => {
+      const isPotentialSuitable = potentialSuitableCoordinates.find(
         (suitable) => suitable.id === validId
       );
-    });
 
-    expect(validatedSuitableIds).to.equal(true);
+      if (isPotentialSuitable) {
+        acc.unshift(isPotentialSuitable);
+      }
+
+      return acc;
+    }, [] as Array<IPrecursorDummyIPoint>);
+
+    expect(validatedSuitableIds.length).to.equal(
+      potentialSuitableCoordinates.length
+    );
   }
 };
 
@@ -105,6 +124,7 @@ describe("determineLeftSideCoordinate", () => {
   const lowMidCoordinate = { x: 100, y: 150 };
   const lowLeftCoordinate = { x: 50, y: 150 };
   const midLeftCoordinate = { x: 50, y: 100 };
+  const midMidCoordinate = { x: 100, y: 100 };
 
   describe("potential coordinates on edge", () => {
     describe("axis edges", () => {
@@ -167,7 +187,6 @@ describe("determineLeftSideCoordinate", () => {
           { x: 149, y: 51 },
         ]);
         it("up right edge", () => {
-          debugger;
           runDetermineLeftTest(
             onBackSlashEdgePointPrecursors,
             [],
@@ -176,7 +195,6 @@ describe("determineLeftSideCoordinate", () => {
           );
         });
         it("down left edge", () => {
-          debugger;
           runDetermineLeftTest(
             onBackSlashEdgePointPrecursors,
             [],
@@ -419,6 +437,107 @@ describe("determineLeftSideCoordinate", () => {
           );
         });
       });
+    });
+  });
+
+  describe("coordinates orthogonal to start coordiante", () => {
+    const othogonalPointPrecursors = generateDummyPointPrecursors([
+      { x: 98, y: 98 },
+      { x: 100, y: 98 },
+      { x: 102, y: 98 },
+      { x: 102, y: 100 },
+      { x: 102, y: 102 },
+      { x: 100, y: 102 },
+      { x: 98, y: 102 },
+      { x: 98, y: 100 },
+    ]);
+
+    const othogonalPointPrecursorsMap = new Map([
+      ["topLeft", othogonalPointPrecursors[0]],
+      ["topMid", othogonalPointPrecursors[1]],
+      ["topRight", othogonalPointPrecursors[2]],
+      ["midRight", othogonalPointPrecursors[3]],
+      ["lowRight", othogonalPointPrecursors[4]],
+      ["lowMid", othogonalPointPrecursors[5]],
+      ["lowLeft", othogonalPointPrecursors[6]],
+      ["midLeft", othogonalPointPrecursors[7]],
+    ]);
+
+    it("to low mid", () => {
+      const suitableCoordinates = [
+        othogonalPointPrecursorsMap.get("lowRight")!,
+        othogonalPointPrecursorsMap.get("midRight")!,
+        othogonalPointPrecursorsMap.get("topRight")!,
+      ];
+
+      const unsuitableCoordinates = new Map(othogonalPointPrecursorsMap);
+      unsuitableCoordinates.delete("lowRight");
+      unsuitableCoordinates.delete("midRight");
+      unsuitableCoordinates.delete("topRight");
+
+      runDetermineLeftTest(
+        [...unsuitableCoordinates.values()],
+        suitableCoordinates,
+        midMidCoordinate,
+        lowMidCoordinate
+      );
+    });
+    it("to top right", () => {
+      const suitableCoordinates = [
+        othogonalPointPrecursorsMap.get("midLeft")!,
+        othogonalPointPrecursorsMap.get("topLeft")!,
+        othogonalPointPrecursorsMap.get("topMid")!,
+      ];
+
+      const unsuitableCoordinates = new Map(othogonalPointPrecursorsMap);
+      unsuitableCoordinates.delete("midLeft");
+      unsuitableCoordinates.delete("topLeft");
+      unsuitableCoordinates.delete("topMid");
+
+      runDetermineLeftTest(
+        [...unsuitableCoordinates.values()],
+        suitableCoordinates,
+        midMidCoordinate,
+        topRightCoordinate
+      );
+    });
+    it("to left", () => {
+      const suitableCoordinates = [
+        othogonalPointPrecursorsMap.get("lowRight")!,
+        othogonalPointPrecursorsMap.get("lowMid")!,
+        othogonalPointPrecursorsMap.get("lowLeft")!,
+      ];
+
+      const unsuitableCoordinates = new Map(othogonalPointPrecursorsMap);
+      unsuitableCoordinates.delete("lowRight");
+      unsuitableCoordinates.delete("lowMid");
+      unsuitableCoordinates.delete("lowLeft");
+
+      runDetermineLeftTest(
+        [...unsuitableCoordinates.values()],
+        suitableCoordinates,
+        midMidCoordinate,
+        midLeftCoordinate
+      );
+    });
+    it("to low right", () => {
+      const suitableCoordinates = [
+        othogonalPointPrecursorsMap.get("topMid")!,
+        othogonalPointPrecursorsMap.get("topRight")!,
+        othogonalPointPrecursorsMap.get("midRight")!,
+      ];
+
+      const unsuitableCoordinates = new Map(othogonalPointPrecursorsMap);
+      unsuitableCoordinates.delete("topMid");
+      unsuitableCoordinates.delete("topRight");
+      unsuitableCoordinates.delete("midRight");
+
+      runDetermineLeftTest(
+        [...unsuitableCoordinates.values()],
+        suitableCoordinates,
+        midMidCoordinate,
+        lowRightCoordinate
+      );
     });
   });
 });
