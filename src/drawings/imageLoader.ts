@@ -24,17 +24,3 @@ export const loadImages = (imageSources: Array<string>) => {
     },
   };
 };
-
-export const getFulfilled = (
-  promises: PromiseSettledResult<HTMLImageElement>[]
-) => {
-  const fulfilledPromises = promises.reduce((acc, promRes) => {
-    if (promRes.status === "fulfilled") {
-      acc.push(promRes.value);
-    }
-
-    return acc;
-  }, [] as Array<HTMLImageElement>);
-
-  return fulfilledPromises;
-};

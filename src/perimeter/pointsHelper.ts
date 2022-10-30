@@ -132,3 +132,63 @@ export const determineTopPointId = (points: IPointsMap) => {
 
   return topPoint;
 };
+export const determineRightPointId = (points: IPointsMap) => {
+  const rightPoint = [...points.entries()].reduce(
+    (rightId, [curId, curVal]) => {
+      const rightVal = points.get(rightId) || null;
+
+      if (rightVal === null || curVal.coordinates.x > rightVal.coordinates.x) {
+        rightId = curId;
+      }
+
+      return rightId;
+    },
+    ""
+  );
+
+  return rightPoint;
+};
+export const determineLowPointId = (points: IPointsMap) => {
+  const lowPoint = [...points.entries()].reduce((lowId, [curId, curVal]) => {
+    const lowVal = points.get(lowId) || null;
+
+    if (lowVal === null || curVal.coordinates.y > lowVal.coordinates.y) {
+      lowId = curId;
+    }
+
+    return lowId;
+  }, "");
+
+  return lowPoint;
+};
+export const determineLeftPointId = (points: IPointsMap) => {
+  const leftPoint = [...points.entries()].reduce((leftId, [curId, curVal]) => {
+    const leftVal = points.get(leftId) || null;
+
+    if (leftVal === null || curVal.coordinates.x < leftVal.coordinates.x) {
+      leftId = curId;
+    }
+
+    return leftId;
+  }, "");
+
+  return leftPoint;
+};
+
+export const determineCardinalPoints = (points: IPointsMap) => {
+  const otherPoints = new Map(points);
+
+  const topPoint = determineTopPointId(otherPoints);
+  otherPoints.delete(topPoint);
+
+  const rightPoint = determineRightPointId(otherPoints);
+  otherPoints.delete(rightPoint);
+
+  const lowPoint = determineLowPointId(otherPoints);
+  otherPoints.delete(lowPoint);
+
+  const leftPoint = determineLeftPointId(otherPoints);
+  otherPoints.delete(leftPoint);
+
+  return [topPoint, rightPoint, lowPoint, leftPoint];
+};
