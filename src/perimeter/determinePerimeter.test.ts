@@ -72,11 +72,13 @@ describe("determinePerimeter", () => {
 
   describe("en vivo failures", () => {
     it("does not infinately recurse", () => {
+      debugger;
       const agglomeratedPerimeter = determinePerimeterPoints(recursingMap);
 
       expect(agglomeratedPerimeter).to.exist;
     });
     it("does not fail when agglomerating perimeters", () => {
+      debugger;
       const agglomeratedPerimeter = determinePerimeterPoints(
         separatePerimetersPointsMap
       );
