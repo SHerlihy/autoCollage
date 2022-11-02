@@ -1,6 +1,32 @@
 import { determineLeftSideCoordinates } from "./determineLeftSideCoordinates";
-import { determineCardinalPoints } from "./pointsHelper";
+import { getMapFromMap } from "./mapHelpers";
+import {
+  coordinatesArrToLinkedPointsMap,
+  determineCardinalPoints,
+} from "./pointsHelper";
 import { IPointsMap } from "./pointsTypes";
+
+export const determineAgglomeratedPerimeterPoints = (
+  perimeterPoints: IPointsMap
+) => {
+  const perimeterPointIds = determineAgglomeratedPerimeterIds(perimeterPoints);
+
+  const { addToSubMap, getSubMap } = getMapFromMap(perimeterPoints);
+
+  addToSubMap(perimeterPointIds);
+
+  const perimeterPointsPre = getSubMap();
+
+  const orderedPerimeterCoordinates = [...perimeterPointsPre.values()].map(
+    ({ coordinates }) => coordinates
+  );
+
+  const perimeterPointsMap = coordinatesArrToLinkedPointsMap(
+    orderedPerimeterCoordinates
+  );
+
+  return perimeterPointsMap;
+};
 
 export const determineAgglomeratedPerimeterIds = (
   perimeterPoints: IPointsMap
@@ -43,7 +69,7 @@ const determineOuterPoints = (
   endId: string,
   potentialPointIds: Set<string>,
   allPointIds: IPointsMap
-) => {
+): string[] => {
   let leftMost = initialId;
 
   const perimeterQuart = [] as Array<string>;
@@ -72,7 +98,7 @@ const determineOuterPoints = (
 
       leftMost = endId;
 
-      return;
+      return perimeterQuart;
     }
 
     leftPointsPool.delete(leftMostPoint);

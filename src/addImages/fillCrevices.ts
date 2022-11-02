@@ -1,6 +1,6 @@
 import { removeUndefinedArrElements } from "../perimeter/arrayHelpers";
 import { imgPointsMapFromCoordinates } from "../perimeter/defineAgglomeratedImg";
-import { determinePerimeterPoints } from "../perimeter/determinePerimeter";
+import { determineCrevicedPerimeterPoints } from "../perimeter/determineCrevicedPerimeter";
 import { addMapsToMap } from "../perimeter/mapHelpers";
 import { ICoordinates, IPoint } from "../perimeter/pointsTypes";
 import { CreateIds } from "./createIds";
@@ -217,7 +217,7 @@ const replaceCrevicePointWithClearanceArea = (
 
   const allPointsMap = addMapsToMap(perimeter, clearanceImgPointsMapsArr);
 
-  const newPerimeterPoints = determinePerimeterPoints(allPointsMap);
+  const newPerimeterPoints = determineCrevicedPerimeterPoints(allPointsMap);
 
   return newPerimeterPoints;
 };

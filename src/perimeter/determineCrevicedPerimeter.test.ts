@@ -1,9 +1,9 @@
 import Sinon from "cypress/types/sinon";
-import { determinePerimeterPoints } from "./determinePerimeter";
+import { determineCrevicedPerimeterPoints } from "./determineCrevicedPerimeter";
 import {
   recursingMap,
   separatePerimetersPointsMap,
-} from "./determinePerimeterVivoTestData";
+} from "./determineCrevicedPerimeterVivoTestData";
 import { img1 } from "./imagePointExamples";
 import * as nextPerimeterPointModule from "./nextPerimeterPoint";
 import { getPerimeterPointIds } from "./pointsHelper";
@@ -44,7 +44,7 @@ describe("determinePerimeter", () => {
 
       const allPoints = new Map(Object.entries(img1)) as IPointsMap;
 
-      const perimeterPoints = determinePerimeterPoints(allPoints);
+      const perimeterPoints = determineCrevicedPerimeterPoints(allPoints);
 
       const newPerimeterPointIds = getPerimeterPointIds("1", perimeterPoints);
 
@@ -60,7 +60,7 @@ describe("determinePerimeter", () => {
 
       const allPoints = new Map(Object.entries(img1)) as IPointsMap;
 
-      const perimeterPoints = determinePerimeterPoints(allPoints);
+      const perimeterPoints = determineCrevicedPerimeterPoints(allPoints);
 
       const newPerimeterPointIds = getPerimeterPointIds("1", perimeterPoints);
 
@@ -73,13 +73,14 @@ describe("determinePerimeter", () => {
   describe("en vivo failures", () => {
     it("does not infinately recurse", () => {
       debugger;
-      const agglomeratedPerimeter = determinePerimeterPoints(recursingMap);
+      const agglomeratedPerimeter =
+        determineCrevicedPerimeterPoints(recursingMap);
 
       expect(agglomeratedPerimeter).to.exist;
     });
     it("does not fail when agglomerating perimeters", () => {
       debugger;
-      const agglomeratedPerimeter = determinePerimeterPoints(
+      const agglomeratedPerimeter = determineCrevicedPerimeterPoints(
         separatePerimetersPointsMap
       );
 

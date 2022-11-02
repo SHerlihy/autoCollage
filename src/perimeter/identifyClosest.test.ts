@@ -29,12 +29,8 @@ describe("identifyClosestCoordinateToCoordinate", () => {
       [nextPoint.currentImgPointId, nextPoint],
     ]);
 
-    const allIds = new Set([...allPoints.keys()]);
-
     const closestId = identifyClosestCoordinateToCoordinate(
       principleCoordinate,
-      "nextPoint",
-      allIds,
       allPoints
     );
 
