@@ -1,6 +1,6 @@
 const path = require("path");
 
-const testFile = "src/addImages/fillCrevices.test.ts";
+const testFile = "src/perimeter/determinePerimeter.test.ts";
 
 module.exports = {
   entry: { fillCrevices: `./${testFile}` },

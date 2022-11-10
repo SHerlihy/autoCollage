@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import usePan from "./usePan/usePan";
 import useZoom from "./useZoom/useZoom";
 
@@ -49,7 +49,7 @@ const drawZoomAndPosition = (
 const { animating, animateCanvas, setAnimate } = animateCanvasClosure();
 
 export const useCanvasPositioner = (
-  canvasRef: React.MutableRefObject<HTMLCanvasElement | null>,
+  canvasRef: React.MutableRefObject<HTMLCanvasElement | undefined>,
   handleDrawAllItems: (context: CanvasRenderingContext2D) => void
 ) => {
   const [canvasContext, setCanvasContext] =
@@ -81,6 +81,9 @@ export const useCanvasPositioner = (
 
     if (animate && !animating && canvasContext && canvasRef.current) {
       setAnimate(true);
+
+      // mutate positioned images
+      // no need coordinates stay the same
 
       animateCanvas(
         () =>
