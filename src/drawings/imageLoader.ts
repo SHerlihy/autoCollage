@@ -1,3 +1,5 @@
+import { generateFulfilledPromisesMap } from "../promiseHelpers";
+
 const loadImage = async (
   imageSource: string,
   res: (image: HTMLImageElement) => void
@@ -23,4 +25,32 @@ export const loadImages = (imageSources: Array<string>) => {
       return await loadedImages;
     },
   };
+};
+
+export const loadedImagesClosure = () => {
+  let loadedImages: Map<string, HTMLImageElement> | undefined;
+
+  const loadNewImages = async (images: Array<string>) => {
+    const unloadedImages = images.filter((src) => {
+      const hasLoaded = loadedImages?.get(src);
+
+      return hasLoaded === undefined;
+    });
+
+    const { getLoadedImages } = loadImages(unloadedImages);
+    const allLoadedImages = await getLoadedImages();
+
+    const fulfilledLoadedImages = generateFulfilledPromisesMap(
+      unloadedImages,
+      allLoadedImages
+    );
+    loadedImages = fulfilledLoadedImages;
+    return;
+  };
+
+  const getLoadedImages = () => {
+    return loadedImages;
+  };
+
+  return { getLoadedImages, loadNewImages };
 };
