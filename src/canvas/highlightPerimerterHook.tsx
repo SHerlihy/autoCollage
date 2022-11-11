@@ -1,22 +1,12 @@
 import { useEffect } from "react";
-import { getMapFromMap } from "../perimeter/mapHelpers";
 import { IPoint } from "../perimeter/pointsTypes";
 
 export const useHighlightPerimeter = (
   canvasRef: React.MutableRefObject<HTMLCanvasElement | undefined>,
-  getAllPoints: () => Map<string, IPoint>,
-  perimeterIds: string[] | undefined
+  currentPerimeterPoints?: Map<string, IPoint>
 ) => {
   useEffect(() => {
-    if (perimeterIds) {
-      const allPoints = getAllPoints();
-
-      const { addToSubMap, getSubMap } = getMapFromMap(allPoints);
-
-      addToSubMap(perimeterIds);
-
-      const currentPerimeterPoints = getSubMap();
-
+    if (currentPerimeterPoints?.size) {
       const currentPointsArr = [...currentPerimeterPoints.values()];
 
       const context = canvasRef.current?.getContext("2d");
@@ -37,5 +27,5 @@ export const useHighlightPerimeter = (
       context.closePath();
       context.stroke();
     }
-  }, [perimeterIds]);
+  }, [currentPerimeterPoints]);
 };

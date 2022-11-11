@@ -7,9 +7,13 @@ import { positionImagesClosure } from "./imagePositioning";
 // @ts-ignore
 // import cat03 from "../../src/assets/cat03.jpg";
 
-import { determineAgglomeratedPerimeterIds } from "../perimeter/determineAgglomeratedPerimeterIds";
+import {
+  determineAgglomeratedPerimeterIds,
+  determineAgglomeratedPerimeterPoints,
+} from "../perimeter/determineAgglomeratedPerimeterIds";
 
 import { useHighlightPerimeter } from "./highlightPerimerterHook";
+import { IPointsMap } from "../perimeter/pointsTypes";
 
 const {
   handleDrawAllItems,
@@ -21,6 +25,7 @@ const {
 export const CanvasControl = () => {
   const canvasRef = useRef<HTMLCanvasElement>();
   const [perimeterIds, setPerimeterIds] = useState<Array<string>>();
+  const [perimeterPoints, setPerimeterPoints] = useState<IPointsMap>();
 
   // can remove later
   useEffect(() => {
@@ -36,7 +41,7 @@ export const CanvasControl = () => {
     }
   }, [canvasRef.current]);
 
-  useHighlightPerimeter(canvasRef, getAllImagePoints, perimeterIds);
+  useHighlightPerimeter(canvasRef, perimeterPoints);
 
   const handleAgglomerateImages = () => {
     const positionedImagesPoints = getAllImagePoints();
@@ -47,7 +52,11 @@ export const CanvasControl = () => {
 
     setPerimeterIds(perimeterPointIds);
 
-    // save in state
+    const perimeterPoints = determineAgglomeratedPerimeterPoints(
+      positionedImagesPoints
+    );
+
+    setPerimeterPoints(perimeterPoints);
   };
 
   const handleAddImages = () => {};

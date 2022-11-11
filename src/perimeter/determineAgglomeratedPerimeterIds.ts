@@ -1,10 +1,9 @@
 import { determineLeftSideCoordinates } from "./determineLeftSideCoordinates";
 import { getMapFromMap } from "./mapHelpers";
-import {
-  coordinatesArrToLinkedPointsMap,
-  determineCardinalPoints,
-} from "./pointsHelper";
-import { IPointsMap } from "./pointsTypes";
+import { determineCardinalPoints } from "./pointsHelper";
+import { IPoint, IPointsMap } from "./pointsTypes";
+
+type pointsMapEntry = [string, IPoint];
 
 export const determineAgglomeratedPerimeterPoints = (
   perimeterPoints: IPointsMap
@@ -15,17 +14,33 @@ export const determineAgglomeratedPerimeterPoints = (
 
   addToSubMap(perimeterPointIds);
 
-  const perimeterPointsPre = getSubMap();
+  const orderedPerimeterPointsPre = getSubMap();
 
-  const orderedPerimeterCoordinates = [...perimeterPointsPre.values()].map(
-    ({ coordinates }) => coordinates
+  const agglomeratedPerimeterPointsPre = [
+    ...orderedPerimeterPointsPre.entries(),
+  ];
+
+  const [lastPointId, lastPoint] =
+    agglomeratedPerimeterPointsPre[agglomeratedPerimeterPointsPre.length - 1];
+
+  const lastPointEntry: pointsMapEntry = [
+    lastPointId,
+    { ...lastPoint, nextImgPointId: agglomeratedPerimeterPointsPre[0][0] },
+  ];
+
+  const updatedPoints = agglomeratedPerimeterPointsPre.map(
+    ([curId, curPoint], idx) => {
+      if (idx === agglomeratedPerimeterPointsPre.length - 1) {
+        return lastPointEntry;
+      }
+      const nextPointId = agglomeratedPerimeterPointsPre[idx + 1][0];
+      const updatedPoint = { ...curPoint, nextImgPointId: nextPointId };
+
+      return [curId, updatedPoint] as pointsMapEntry;
+    }
   );
 
-  const perimeterPointsMap = coordinatesArrToLinkedPointsMap(
-    orderedPerimeterCoordinates
-  );
-
-  return perimeterPointsMap;
+  return new Map(updatedPoints);
 };
 
 export const determineAgglomeratedPerimeterIds = (
