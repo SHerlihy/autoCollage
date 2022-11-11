@@ -14,9 +14,5 @@ export const Canvas = ({ canvasRef }) => {
     };
   }, []);
 
-  return (
-    <>
-      <canvas ref={canvasRef} width={"500"} height={"500"} />
-    </>
-  );
+  return <canvas className="canvas-root" ref={canvasRef} />;
 };

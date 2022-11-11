@@ -1,42 +1,83 @@
-import React, { useRef } from "react";
-import { loadImages } from "../drawings/imageLoader";
-import { drawAllItems } from "../drawings/sampleDrawing";
+import React, { useEffect, useRef, useState } from "react";
 import { Canvas } from "./Canvas";
-import { useImageChanger } from "./useImageChanger";
+// import { useImageChanger } from "./useImageChanger";
 import { useCanvasPositioner } from "./useCanvasPositioner";
+import { positionImagesClosure } from "./imagePositioning";
 
-const loadedImagesClosure = () => {
-  let loadedImages: PromiseSettledResult<HTMLImageElement>[] | undefined;
+// @ts-ignore
+// import cat03 from "../../src/assets/cat03.jpg";
 
-  const loadNewImages = async (images: Array<string>) => {
-    const { getLoadedImages } = loadImages(images);
-    loadedImages = await getLoadedImages();
-    console.log(loadedImages);
-    return;
-  };
+import {
+  determineAgglomeratedPerimeterIds,
+  determineAgglomeratedPerimeterPoints,
+} from "../perimeter/determineAgglomeratedPerimeterIds";
 
-  const getLoadedImages = () => {
-    return loadedImages;
-  };
+import { useHighlightPerimeter } from "./highlightPerimerterHook";
+import { IPointsMap } from "../perimeter/pointsTypes";
 
-  return { getLoadedImages, loadNewImages };
-};
+const {
+  handleDrawAllItems,
+  handleAddInitialItems,
+  getAllImagePoints,
+  setCanvasContext,
+} = positionImagesClosure();
 
-const { getLoadedImages, loadNewImages } = loadedImagesClosure();
+export const CanvasControl = () => {
+  const canvasRef = useRef<HTMLCanvasElement>();
+  const [perimeterIds, setPerimeterIds] = useState<Array<string>>();
+  const [perimeterPoints, setPerimeterPoints] = useState<IPointsMap>();
 
-const handleDrawAllItems = (context: CanvasRenderingContext2D) => {
-  const loadedImages = getLoadedImages();
-  if (context && loadedImages) {
-    drawAllItems(context, loadedImages);
-  }
-};
-
-export const CanvasControl = ({ currentImages }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useImageChanger(canvasRef, currentImages, loadNewImages, handleDrawAllItems);
+  // can remove later
+  useEffect(() => {
+    handleAddInitialItems();
+  }, []);
 
   useCanvasPositioner(canvasRef, handleDrawAllItems);
 
-  return <Canvas canvasRef={canvasRef} />;
+  useEffect(() => {
+    const currentContext = canvasRef.current?.getContext("2d");
+    if (currentContext) {
+      setCanvasContext(currentContext);
+    }
+  }, [canvasRef.current]);
+
+  useHighlightPerimeter(canvasRef, perimeterPoints);
+
+  const handleAgglomerateImages = () => {
+    const positionedImagesPoints = getAllImagePoints();
+
+    const perimeterPointIds = determineAgglomeratedPerimeterIds(
+      positionedImagesPoints
+    );
+
+    setPerimeterIds(perimeterPointIds);
+
+    const perimeterPoints = determineAgglomeratedPerimeterPoints(
+      positionedImagesPoints
+    );
+
+    setPerimeterPoints(perimeterPoints);
+  };
+
+  const handleAddImages = () => {};
+
+  return (
+    <main>
+      <Canvas canvasRef={canvasRef} />
+      <article className="sidebar">
+        <button
+          onClick={() => {
+            // so it loads
+            // setImages([cat03]);
+            // so it draws
+            // handleAddInitialItems();
+          }}
+        >
+          Cats!
+        </button>
+        <button onClick={handleAgglomerateImages}>Agglomerate</button>
+        <button onClick={handleAddImages}>Add Images</button>
+      </article>
+    </main>
+  );
 };

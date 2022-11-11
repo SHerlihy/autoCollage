@@ -1,7 +1,7 @@
 import { toDecimalPlaces } from "../perimeter/mathHelpers";
 import {
   pointPrecursorArrToLinkedPointsMap,
-  getPerimeterPointIds,
+  getOrderedPerimeterPointIds,
 } from "../perimeter/pointsHelper";
 import { ICoordinates, IPointsMap } from "../perimeter/pointsTypes";
 import { fillCrevices } from "./fillCrevices";
@@ -50,7 +50,7 @@ const expectCoordinatesWithinGradient = (
     filledImgPerimeter.get(initialId)!;
   const { coordinates: rightCrevCoordinates } = filledImgPerimeter.get(endId)!;
 
-  const pointIdsBetweenCrevice = getPerimeterPointIds(
+  const pointIdsBetweenCrevice = getOrderedPerimeterPointIds(
     initialId,
     filledImgPerimeter,
     endId

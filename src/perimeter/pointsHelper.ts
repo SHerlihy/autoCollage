@@ -1,3 +1,5 @@
+import { CreateIds } from "../addImages/createIds";
+import { IPositionedImage } from "../drawings/sampleDrawing";
 import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
 
 export interface IPrecursorIPoint {
@@ -24,7 +26,7 @@ export const coordinatesToPoint = (
   } as IPoint;
 };
 
-export const getPerimeterPointIds = (
+export const getOrderedPerimeterPointIds = (
   startId: string,
   perimeterPoints: IPointsMap,
   endId?: string
@@ -191,4 +193,63 @@ export const determineCardinalPoints = (points: IPointsMap) => {
   otherPoints.delete(leftPoint);
 
   return [topPoint, rightPoint, lowPoint, leftPoint];
+};
+
+export const imagesToPointsMap = (positionedImagesArr: IPositionedImage[]) => {
+  const allImagePointsMap = positionedImagesArr.reduce(
+    (acc, { image, position }) => {
+      const { x, y } = position;
+      const { width, height } = image;
+
+      const tlCo = { x, y };
+      const trCo = { x: x + width, y };
+      const brCo = { x: x + width, y: y + height };
+      const blCo = { x, y: y + height };
+
+      const tlId = CreateIds.getInstance().generateNovelId();
+      const trId = CreateIds.getInstance().generateNovelId();
+      const brId = CreateIds.getInstance().generateNovelId();
+      const blId = CreateIds.getInstance().generateNovelId();
+
+      const imgId = CreateIds.getInstance().generateNovelId();
+
+      const tlPoint = {
+        imgId,
+        currentImgPointId: tlId,
+        nextImgPointId: trId,
+        coordinates: tlCo,
+      };
+
+      const trPoint = {
+        imgId,
+        currentImgPointId: trId,
+        nextImgPointId: brId,
+        coordinates: trCo,
+      };
+
+      const brPoint = {
+        imgId,
+        currentImgPointId: brId,
+        nextImgPointId: blId,
+        coordinates: brCo,
+      };
+
+      const blPoint = {
+        imgId,
+        currentImgPointId: blId,
+        nextImgPointId: tlId,
+        coordinates: blCo,
+      };
+
+      acc.set(tlId, tlPoint);
+      acc.set(trId, trPoint);
+      acc.set(brId, brPoint);
+      acc.set(blId, blPoint);
+
+      return acc;
+    },
+    new Map<string, IPoint>()
+  );
+
+  return allImagePointsMap;
 };

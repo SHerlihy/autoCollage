@@ -6,7 +6,7 @@ import {
 } from "./determineCrevicedPerimeterVivoTestData";
 import { img1 } from "./imagePointExamples";
 import * as nextPerimeterPointModule from "./nextPerimeterPoint";
-import { getPerimeterPointIds } from "./pointsHelper";
+import { getOrderedPerimeterPointIds } from "./pointsHelper";
 import { IPointsMap } from "./pointsTypes";
 
 const nextPerimeterPointClosure = (allPerimeterPoints: string[]) => {
@@ -46,7 +46,10 @@ describe("determinePerimeter", () => {
 
       const perimeterPoints = determineCrevicedPerimeterPoints(allPoints);
 
-      const newPerimeterPointIds = getPerimeterPointIds("1", perimeterPoints);
+      const newPerimeterPointIds = getOrderedPerimeterPointIds(
+        "1",
+        perimeterPoints
+      );
 
       expect(newPerimeterPointIds).to.deep.equal(
         determineNextPointIdProgression
@@ -62,7 +65,10 @@ describe("determinePerimeter", () => {
 
       const perimeterPoints = determineCrevicedPerimeterPoints(allPoints);
 
-      const newPerimeterPointIds = getPerimeterPointIds("1", perimeterPoints);
+      const newPerimeterPointIds = getOrderedPerimeterPointIds(
+        "1",
+        perimeterPoints
+      );
 
       expect(newPerimeterPointIds).to.deep.equal(
         determineNextPointIdProgression

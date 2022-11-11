@@ -1,5 +1,5 @@
 import { defineImgPerimeter } from "../perimeter/defineAgglomeratedImg";
-import { determinePerimeterPoints } from "../perimeter/determinePerimeter";
+import { determineCrevicedPerimeterPoints } from "../perimeter/determineCrevicedPerimeter";
 import { ICoordinates, IPoint, IPointsMap } from "../perimeter/pointsTypes";
 import {
   getDegreesFromNonHypotenuseSides,

@@ -156,7 +156,9 @@ const determineCreviceClearanceAreas = (
         clearanceWidth
       );
 
-      if (!areas) return;
+      if (!areas) {
+        return undefined;
+      }
 
       const clearanceAreaInfo = {
         preCrevicePointId,

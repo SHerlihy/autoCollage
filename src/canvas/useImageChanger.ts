@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 export const useImageChanger = (
-  canvasRef: React.MutableRefObject<HTMLCanvasElement | null>,
+  canvasRef: React.MutableRefObject<HTMLCanvasElement | undefined>,
   currentImages: Array<string>,
   loadNewImages: (images: Array<string>) => Promise<void>,
   handleDrawAllItems: (context: CanvasRenderingContext2D) => void

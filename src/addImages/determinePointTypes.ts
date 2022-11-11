@@ -17,7 +17,7 @@ export const determinePointTypes = (pointsMap: IPointsMap) => {
 
   let startId = [...pointsMap.keys()][0];
 
-  for (const [prevId, prevPoint] of pointsMap) {
+  for (const prevPoint of pointsMap.values()) {
     const startPoint = pointsMap.get(startId)!;
     const subjectPoint = pointsMap.get(prevPoint.nextImgPointId)!;
     const endPoint = pointsMap.get(subjectPoint.nextImgPointId)!;
