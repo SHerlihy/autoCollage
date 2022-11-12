@@ -1,6 +1,14 @@
 import { CreateIds } from "../addImages/createIds";
+import {
+  determineCoordinatesAlongLine,
+  lineDirection,
+} from "../addImages/shapeHelpers";
 import { IPositionedImage } from "../drawings/sampleDrawing";
 import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
+import {
+  getDegreesFromNonHypotenuseSides,
+  SOHOppositeSideFromDegrees,
+} from "./trigonometryHelpers";
 
 export interface IPrecursorIPoint {
   coordinates: ICoordinates;
@@ -252,4 +260,50 @@ export const imagesToPointsMap = (positionedImagesArr: IPositionedImage[]) => {
   );
 
   return allImagePointsMap;
+};
+
+//will need more work
+//consider directionality
+export const calculatePerpendicular = (
+  from: ICoordinates,
+  to: ICoordinates,
+  along: number,
+  away: number
+) => {
+  // find along coordinate
+  const alongCoordiante = determineCoordinatesAlongLine(from, to, along);
+
+  const ogGradient = (to.y - from.y) / (to.x - from.x);
+
+  const perpendicularGradient = -1 / ogGradient;
+
+  const xAngle = getDegreesFromNonHypotenuseSides(1, 1 * perpendicularGradient);
+  const yAngle = 90 - xAngle;
+
+  const yLength = SOHOppositeSideFromDegrees(away, xAngle);
+  const xLength = SOHOppositeSideFromDegrees(away, yAngle);
+
+  const ogDirection = lineDirection(from, to);
+
+  const xChange = ogDirection.yDirection === "down" ? xLength : -xLength;
+  const yChange = ogDirection.xDirection === "right" ? -yLength : yLength;
+
+  if (ogDirection.xDirection === "vertical") {
+    return {
+      x: alongCoordiante.x + xChange,
+      y: alongCoordiante.y,
+    };
+  }
+
+  if (ogDirection.yDirection === "horizontal") {
+    return {
+      x: alongCoordiante.x,
+      y: alongCoordiante.y + yChange,
+    };
+  }
+
+  return {
+    x: alongCoordiante.x + xChange,
+    y: alongCoordiante.y + yChange,
+  };
 };

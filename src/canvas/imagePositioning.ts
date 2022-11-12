@@ -1,5 +1,8 @@
 import { CreateIds } from "../addImages/createIds";
-import { loadedImagesClosure } from "../drawings/imageLoader";
+import {
+  ILoadedImagesClosureResults,
+  loadedImagesClosure,
+} from "../drawings/imageLoader";
 import { drawLoadedImages, IPositionedImage } from "../drawings/sampleDrawing";
 import { imagesToPointsMap } from "../perimeter/pointsHelper";
 import { IPoint } from "../perimeter/pointsTypes";
@@ -7,8 +10,10 @@ import { IPoint } from "../perimeter/pointsTypes";
 // @ts-ignore
 import screamImg from "../../src/assets/img_the_scream.jpg";
 
-export const positionImagesClosure = () => {
-  const { getLoadedImages, loadNewImages } = loadedImagesClosure();
+export const positionImagesClosure = (
+  loadedImages: ILoadedImagesClosureResults
+) => {
+  const { getLoadedImages, loadNewImages } = loadedImages;
 
   let allPositionedImages: Map<string, IPositionedImage> = new Map();
   let allImagePoints: Map<string, IPoint> = new Map();
@@ -86,6 +91,7 @@ export const positionImagesClosure = () => {
   return {
     getPositionedImages,
     handleAddInitialItems,
+    handleAddPositionedImages,
     handleDrawAllItems,
     getAllImagePoints,
     setCanvasContext,

@@ -3,6 +3,7 @@ import { ICoordinates } from "../perimeter/pointsTypes";
 export interface IPositionedImage {
   image: HTMLImageElement;
   position: ICoordinates;
+  rotation?: number;
 }
 
 // remember idea of using gradient on perimeter points and an offset to fill after fillCrevices
@@ -11,9 +12,12 @@ export const drawLoadedImages = (
   ctx: CanvasRenderingContext2D,
   loadedImages: Array<IPositionedImage>
 ) => {
-  for (const { image, position } of loadedImages) {
+  for (const { image, position, rotation } of loadedImages) {
     const { x, y } = position;
     ctx.drawImage(image, x, y);
+    if (rotation) {
+      ctx.rotate((rotation * Math.PI) / 180);
+    }
   }
 };
 

@@ -27,7 +27,12 @@ export const loadImages = (imageSources: Array<string>) => {
   };
 };
 
-export const loadedImagesClosure = () => {
+export interface ILoadedImagesClosureResults {
+  getLoadedImages: () => Map<string, HTMLImageElement> | undefined;
+  loadNewImages: (images: string[]) => Promise<void>;
+}
+
+export const loadedImagesClosure = (): ILoadedImagesClosureResults => {
   let loadedImages: Map<string, HTMLImageElement> | undefined;
 
   const loadNewImages = async (images: Array<string>) => {
