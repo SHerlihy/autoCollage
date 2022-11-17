@@ -55,17 +55,27 @@ export const positionImagesClosure = (
 
     const startImg = [...loadedImages.values()][0];
 
-    const forkHandle = { image: startImg, position: { x: 0, y: 0 } };
+    const forkHandle = {
+      image: startImg,
+      position: { x: startImg.width / 2, y: startImg.height / 2 },
+      rotation: 10,
+    };
     const prongLeft = {
       image: startImg,
-      position: { x: -startImg.width / 2, y: -startImg.height },
+      position: { x: -startImg.width / 4, y: -startImg.height / 2 },
+      rotation: 10,
     };
     const prongRight = {
       image: startImg,
-      position: { x: startImg.width / 1.5, y: -startImg.height },
+      position: { x: startImg.width, y: -startImg.height / 2 },
+    };
+    const pronged = {
+      image: startImg,
+      position: { x: startImg.width / 2, y: -startImg.height * 1.5 },
+      rotation: 300,
     };
 
-    handleAddPositionedImages([forkHandle, prongLeft, prongRight]);
+    handleAddPositionedImages([forkHandle, prongLeft, prongRight, pronged]);
   };
 
   const handleDrawAllItems = () => {

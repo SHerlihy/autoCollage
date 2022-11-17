@@ -44,8 +44,18 @@ export const SOHOppositeSideFromDegrees = (hyp, oppDegrees) => {
   return SOHOppositeSideFromRadians(hyp, rads);
 };
 
+export const CAHOppositeSideFromDegrees = (hyp, adjDegrees) => {
+  const rads = degreesToRads(adjDegrees);
+
+  return CAHAdjacentSideFromRadians(hyp, rads);
+};
+
 export const SOHOppositeSideFromRadians = (hyp, oppRads) => {
   return hyp * Math.sin(oppRads);
+};
+
+export const CAHAdjacentSideFromRadians = (hyp, adjRads) => {
+  return hyp * Math.cos(adjRads);
 };
 
 export const getSideLengthFromDegreesAndSide = (

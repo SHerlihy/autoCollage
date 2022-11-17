@@ -24,6 +24,7 @@ import { loadedImagesClosure } from "../drawings/imageLoader";
 import { IPositionedImage } from "../drawings/sampleDrawing";
 import { calculatePerpendicular } from "../perimeter/pointsHelper";
 import { getRandomIndex } from "../perimeter/arrayHelpers";
+import { withinEpsilonBounds } from "../perimeter/mathHelpers";
 
 const loadedImagesClosureResults = loadedImagesClosure();
 const { getLoadedImages, loadNewImages } = loadedImagesClosureResults;
@@ -58,16 +59,28 @@ const positionImagesAlongEdge = (
   // find gradient on edge so rotation can be made to follow
 
   // calculate perpendicular based on gradients/rotation
+  // const across = image.placeByWidth
+  //   ? image.imageValue.width
+  //   : image.imageValue.height;
   const across = image.placeByWidth
-    ? image.imageValue.width
-    : image.imageValue.height;
+    ? image.imageValue.width / 2
+    : image.imageValue.height / 2;
+
   const away = image.placeByWidth
-    ? image.imageValue.height
-    : image.imageValue.width;
+    ? image.imageValue.height / 2
+    : image.imageValue.width / 2;
+
+  const { coordinates, rotation } = calculatePerpendicular(
+    from,
+    to,
+    across,
+    away
+  );
 
   return {
     image: image.imageValue,
-    position: calculatePerpendicular(from, to, across, away),
+    position: coordinates,
+    rotation,
   };
 };
 
@@ -108,7 +121,7 @@ export const CanvasControl = () => {
     setPerimeterPoints(perimeterPoints);
   };
 
-  const handleAddImages = () => {
+  const handleAddImages = async () => {
     if (!perimeterPoints?.size) {
       return;
     }
@@ -196,13 +209,14 @@ export const CanvasControl = () => {
 
     const positionedImages = imagesToAdd.map((placeDimensionImage) => {
       const across = placeDimensionImage.placeByWidth
-        ? placeDimensionImage.imageValue.width
-        : placeDimensionImage.imageValue.height;
-      const away = placeDimensionImage.placeByWidth
-        ? placeDimensionImage.imageValue.height
-        : placeDimensionImage.imageValue.width;
+        ? placeDimensionImage.imageValue.width / 2
+        : placeDimensionImage.imageValue.height / 2;
 
-      if (yDelta === 0) {
+      const away = placeDimensionImage.placeByWidth
+        ? placeDimensionImage.imageValue.height / 2
+        : placeDimensionImage.imageValue.width / 2;
+
+      if (withinEpsilonBounds(yDelta, 0, 1000)) {
         if (from.coordinates.x < to.coordinates.x) {
           return {
             image: placeDimensionImage.imageValue,
@@ -210,7 +224,7 @@ export const CanvasControl = () => {
               x: from.coordinates.x + across,
               y: from.coordinates.y - away,
             },
-            rotation: placeDimensionImage.placeByWidth ? 0 : 90,
+            rotation: placeDimensionImage.placeByWidth ? 0 : 270,
           };
         } else {
           return {
@@ -219,18 +233,18 @@ export const CanvasControl = () => {
               x: from.coordinates.x - across,
               y: from.coordinates.y + away,
             },
-            rotation: placeDimensionImage.placeByWidth ? 270 : 180,
+            rotation: placeDimensionImage.placeByWidth ? 180 : 90,
           };
         }
       }
 
-      if (xDelta === 0) {
+      if (withinEpsilonBounds(xDelta, 0, 1000)) {
         if (from.coordinates.y < to.coordinates.y) {
           return {
             image: placeDimensionImage.imageValue,
             position: {
-              x: from.coordinates.x + across,
-              y: from.coordinates.y + away,
+              x: from.coordinates.x + away,
+              y: from.coordinates.y + across,
             },
             rotation: placeDimensionImage.placeByWidth ? 90 : 0,
           };
@@ -238,28 +252,22 @@ export const CanvasControl = () => {
           return {
             image: placeDimensionImage.imageValue,
             position: {
-              x: from.coordinates.x - across,
-              y: from.coordinates.y - away,
+              x: from.coordinates.x - away,
+              y: from.coordinates.y - across,
             },
-            rotation: placeDimensionImage.placeByWidth ? 180 : 270,
+            rotation: placeDimensionImage.placeByWidth ? 270 : 180,
           };
         }
       }
 
-      const { image, position } = positionImagesAlongEdge(
+      return positionImagesAlongEdge(
         from.coordinates,
         to.coordinates,
         placeDimensionImage
       );
-
-      return {
-        image,
-        position,
-        rotation,
-      };
     });
 
-    handleAddPositionedImages(positionedImages);
+    await handleAddPositionedImages(positionedImages);
   };
 
   return (

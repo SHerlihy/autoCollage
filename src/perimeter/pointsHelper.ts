@@ -6,7 +6,10 @@ import {
 import { IPositionedImage } from "../drawings/sampleDrawing";
 import { ICoordinates, IPoint, IPointsMap } from "./pointsTypes";
 import {
+  CAHOppositeSideFromDegrees,
   getDegreesFromNonHypotenuseSides,
+  getHypotenuseSideFromSides,
+  getSideLengthFromDegreesAndSide,
   SOHOppositeSideFromDegrees,
 } from "./trigonometryHelpers";
 
@@ -203,16 +206,69 @@ export const determineCardinalPoints = (points: IPointsMap) => {
   return [topPoint, rightPoint, lowPoint, leftPoint];
 };
 
+const calculatePointsWithRotation = (
+  rotation: number,
+  hyp: number,
+  position: ICoordinates,
+  widthAngle: number,
+  heightAngle: number
+) => {
+  const { x, y } = position;
+
+  const toBRAngle = heightAngle - rotation;
+  const toTRAngle = 90 + widthAngle - rotation;
+
+  const tlCo = {
+    x: x + SOHOppositeSideFromDegrees(hyp, 180 + toBRAngle),
+    y: y + CAHOppositeSideFromDegrees(hyp, 180 + toBRAngle),
+  };
+  const brCo = {
+    x: x + SOHOppositeSideFromDegrees(hyp, toBRAngle),
+    y: y + CAHOppositeSideFromDegrees(hyp, toBRAngle),
+  };
+
+  const trCo = {
+    x: x + SOHOppositeSideFromDegrees(hyp, toTRAngle),
+    y: y + CAHOppositeSideFromDegrees(hyp, toTRAngle),
+  };
+  const blCo = {
+    x: x + SOHOppositeSideFromDegrees(hyp, 180 + toTRAngle),
+    y: y + CAHOppositeSideFromDegrees(hyp, 180 + toTRAngle),
+  };
+
+  return {
+    tlCo,
+    trCo,
+    brCo,
+    blCo,
+  };
+};
+
 export const imagesToPointsMap = (positionedImagesArr: IPositionedImage[]) => {
+  // will need to factor in rotation
   const allImagePointsMap = positionedImagesArr.reduce(
-    (acc, { image, position }) => {
-      const { x, y } = position;
+    (acc, { image, position, rotation = 0 }) => {
       const { width, height } = image;
 
-      const tlCo = { x, y };
-      const trCo = { x: x + width, y };
-      const brCo = { x: x + width, y: y + height };
-      const blCo = { x, y: y + height };
+      const hyp = getHypotenuseSideFromSides(width / 2, height / 2);
+
+      const widthAngle = getDegreesFromNonHypotenuseSides(
+        height / 2,
+        width / 2
+      );
+
+      const heightAngle = getDegreesFromNonHypotenuseSides(
+        width / 2,
+        height / 2
+      );
+
+      const { tlCo, trCo, brCo, blCo } = calculatePointsWithRotation(
+        rotation,
+        hyp,
+        position,
+        widthAngle,
+        heightAngle
+      );
 
       const tlId = CreateIds.getInstance().generateNovelId();
       const trId = CreateIds.getInstance().generateNovelId();
@@ -277,11 +333,13 @@ export const calculatePerpendicular = (
 
   const perpendicularGradient = -1 / ogGradient;
 
-  const xAngle = getDegreesFromNonHypotenuseSides(1, 1 * perpendicularGradient);
-  const yAngle = 90 - xAngle;
+  const yAngle = Math.abs(
+    getDegreesFromNonHypotenuseSides(1, 1 * perpendicularGradient)
+  );
+  const xAngle = 90 - yAngle;
 
-  const yLength = SOHOppositeSideFromDegrees(away, xAngle);
   const xLength = SOHOppositeSideFromDegrees(away, yAngle);
+  const yLength = SOHOppositeSideFromDegrees(away, xAngle);
 
   const ogDirection = lineDirection(from, to);
 
@@ -290,20 +348,45 @@ export const calculatePerpendicular = (
 
   if (ogDirection.xDirection === "vertical") {
     return {
-      x: alongCoordiante.x + xChange,
-      y: alongCoordiante.y,
+      coordinates: {
+        x: alongCoordiante.x + xChange,
+        y: alongCoordiante.y,
+      },
     };
   }
 
   if (ogDirection.yDirection === "horizontal") {
     return {
-      x: alongCoordiante.x,
-      y: alongCoordiante.y + yChange,
+      coordinates: {
+        x: alongCoordiante.x,
+        y: alongCoordiante.y + yChange,
+      },
     };
   }
 
+  let rotation;
+
+  if (perpendicularGradient < 0) {
+    if (ogDirection.xDirection === "right") {
+      rotation = 90 - xAngle;
+    } else {
+      rotation = 270 - xAngle;
+    }
+  }
+
+  if (perpendicularGradient > 0) {
+    if (ogDirection.xDirection === "right") {
+      rotation = 270 + xAngle;
+    } else {
+      rotation = 90 + xAngle;
+    }
+  }
+
   return {
-    x: alongCoordiante.x + xChange,
-    y: alongCoordiante.y + yChange,
+    coordinates: {
+      x: alongCoordiante.x + xChange,
+      y: alongCoordiante.y + yChange,
+    },
+    rotation,
   };
 };

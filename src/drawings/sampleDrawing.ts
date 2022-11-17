@@ -1,4 +1,8 @@
 import { ICoordinates } from "../perimeter/pointsTypes";
+import {
+  getHypotenuseSideFromSides,
+  SOHOppositeSideFromDegrees,
+} from "../perimeter/trigonometryHelpers";
 
 export interface IPositionedImage {
   image: HTMLImageElement;
@@ -12,12 +16,37 @@ export const drawLoadedImages = (
   ctx: CanvasRenderingContext2D,
   loadedImages: Array<IPositionedImage>
 ) => {
-  for (const { image, position, rotation } of loadedImages) {
+  for (const { image, position, rotation = 0 } of loadedImages) {
     const { x, y } = position;
-    ctx.drawImage(image, x, y);
+    const { width, height } = image;
+
+    ctx.translate(x, y);
+
+    // const adjustedRotation = rotation % 45;
+
+    // const hyp = getHypotenuseSideFromSides(width/2, height/2);
+
+    // const xLength = SOHOppositeSideFromDegrees(hyp, 45 - adjustedRotation)
+
+    // const centerCoordinate =
+
+    // ctx.translate(x + width / 2, y + height / 2);
+
+    ///maybe change all prev to rotate about center instead of top left
+
     if (rotation) {
-      ctx.rotate((rotation * Math.PI) / 180);
+      const rotateRads = rotation * Math.PI;
+      ctx.rotate(rotateRads / 180);
     }
+
+    ctx.drawImage(image, -width / 2, -height / 2);
+
+    if (rotation) {
+      const counterRads = (360 - rotation) * Math.PI;
+      ctx.rotate(counterRads / 180);
+    }
+
+    ctx.translate(-x, -y);
   }
 };
 
