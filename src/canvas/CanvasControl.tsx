@@ -7,7 +7,7 @@ import { positionImagesClosure } from "./imagePositioning";
 // @ts-ignore
 // import cat03 from "../../src/assets/cat03.jpg";
 
-import { generateEdgesMap, IEdgesMap } from "../addImages/generateEdgesMap";
+import { generateEdgesMap } from "../addImages/generateEdgesMap";
 
 import {
   determineAgglomeratedPerimeterIds,
@@ -16,10 +16,7 @@ import {
 
 import { useHighlightPerimeter } from "./highlightPerimerterHook";
 import { ICoordinates, IPointsMap } from "../perimeter/pointsTypes";
-import {
-  edgeLengthFromCoordinates,
-  getDegreesFromNonHypotenuseSides,
-} from "../perimeter/trigonometryHelpers";
+import { edgeLengthFromCoordinates } from "../perimeter/trigonometryHelpers";
 import { loadedImagesClosure } from "../drawings/imageLoader";
 import { IPositionedImage } from "../drawings/sampleDrawing";
 import { calculatePerpendicular } from "../perimeter/pointsHelper";
@@ -47,6 +44,8 @@ type PlaceDimensionImage = {
   imageId: string;
   imageValue: HTMLImageElement;
   placeByWidth: boolean;
+  across: number;
+  away: number;
 };
 
 const positionImagesAlongEdge = (
@@ -54,14 +53,6 @@ const positionImagesAlongEdge = (
   to: ICoordinates,
   image: PlaceDimensionImage
 ): IPositionedImage => {
-  // I neeed to fugure out how to rotate my images
-
-  // find gradient on edge so rotation can be made to follow
-
-  // calculate perpendicular based on gradients/rotation
-  // const across = image.placeByWidth
-  //   ? image.imageValue.width
-  //   : image.imageValue.height;
   const across = image.placeByWidth
     ? image.imageValue.width / 2
     : image.imageValue.height / 2;
@@ -82,6 +73,141 @@ const positionImagesAlongEdge = (
     position: coordinates,
     rotation,
   };
+};
+
+const determineValidImages = (
+  images: Map<string, HTMLImageElement>,
+  edgeWidth: number
+) => {
+  const validatedImages: Array<ValidatedImage> = [];
+
+  for (const [imageId, imageValue] of images) {
+    const { width, height } = imageValue;
+
+    if (height > edgeWidth && width > edgeWidth) {
+      continue;
+    }
+
+    const validatedImage = {
+      imageId,
+      validHeight: height <= edgeWidth,
+      validWidth: width <= edgeWidth,
+    };
+
+    validatedImages.push(validatedImage);
+  }
+  return validatedImages;
+};
+
+const determineImagesToAdd = (
+  edgeWidth: number,
+  currentLoadedImages: Map<string, HTMLImageElement>,
+  validatedImages: ValidatedImage[]
+) => {
+  const imagesToAdd: Array<PlaceDimensionImage> = [];
+
+  let acrossAccumulator = 0;
+
+  while (edgeWidth > 0) {
+    const randomIdx = getRandomIndex(validatedImages);
+
+    const { imageId, validHeight, validWidth } = validatedImages[randomIdx];
+
+    const imageValue = currentLoadedImages.get(imageId)!;
+
+    // width then height
+
+    const remainingWidth = validWidth
+      ? edgeWidth - imageValue.width
+      : edgeWidth - imageValue.height;
+
+    if (remainingWidth < 0) {
+      break;
+    }
+
+    edgeWidth = remainingWidth;
+
+    const acrossAdditionalSpace = validWidth
+      ? imageValue.width
+      : imageValue.height;
+
+    const across = acrossAccumulator + acrossAdditionalSpace / 2;
+
+    acrossAccumulator = acrossAccumulator + acrossAdditionalSpace;
+
+    const away = validWidth ? imageValue.height / 2 : imageValue.width / 2;
+
+    imagesToAdd.push({
+      imageId,
+      imageValue,
+      placeByWidth: validWidth,
+      across,
+      away,
+    });
+  }
+
+  return imagesToAdd;
+};
+
+const generatePositionImages = (
+  imagesToAdd: PlaceDimensionImage[],
+  from: ICoordinates,
+  to: ICoordinates
+) => {
+  const yDelta = to.y - from.y;
+  const xDelta = to.x - from.x;
+
+  const positionedImages = imagesToAdd.map((placeDimensionImage) => {
+    const { across, away } = placeDimensionImage;
+
+    if (withinEpsilonBounds(yDelta, 0, 1000)) {
+      if (from.x < to.x) {
+        return {
+          image: placeDimensionImage.imageValue,
+          position: {
+            x: from.x + across,
+            y: from.y - away,
+          },
+          rotation: placeDimensionImage.placeByWidth ? 0 : 270,
+        };
+      } else {
+        return {
+          image: placeDimensionImage.imageValue,
+          position: {
+            x: from.x - across,
+            y: from.y + away,
+          },
+          rotation: placeDimensionImage.placeByWidth ? 180 : 90,
+        };
+      }
+    }
+
+    if (withinEpsilonBounds(xDelta, 0, 1000)) {
+      if (from.y < to.y) {
+        return {
+          image: placeDimensionImage.imageValue,
+          position: {
+            x: from.x + away,
+            y: from.y + across,
+          },
+          rotation: placeDimensionImage.placeByWidth ? 90 : 0,
+        };
+      } else {
+        return {
+          image: placeDimensionImage.imageValue,
+          position: {
+            x: from.x - away,
+            y: from.y - across,
+          },
+          rotation: placeDimensionImage.placeByWidth ? 270 : 180,
+        };
+      }
+    }
+
+    return positionImagesAlongEdge(from, to, placeDimensionImage);
+  });
+
+  return positionedImages;
 };
 
 export const CanvasControl = () => {
@@ -125,19 +251,6 @@ export const CanvasControl = () => {
     if (!perimeterPoints?.size) {
       return;
     }
-    const perimeterEdges = generateEdgesMap(perimeterPoints);
-
-    const edgesEntries = [...perimeterEdges.entries()];
-
-    const edgeIdx = getRandomIndex(edgesEntries);
-
-    const [perimerterEdgeId, perimeterEdgeValue] = edgesEntries[edgeIdx];
-
-    const { from, to } = perimeterEdgeValue.points;
-
-    let edgeWidth = edgeLengthFromCoordinates(from.coordinates, to.coordinates);
-
-    // identify what can fill
 
     const currentLoadedImages = getLoadedImages();
 
@@ -145,129 +258,42 @@ export const CanvasControl = () => {
       return;
     }
 
-    const validatedImages: Array<ValidatedImage> = [];
+    const perimeterEdges = generateEdgesMap(perimeterPoints);
 
-    for (const [imageId, imageValue] of currentLoadedImages) {
-      const { width, height } = imageValue;
+    //want to do for all edges that are on screen
+    //simplification just do for all edges
 
-      if (height > edgeWidth && width > edgeWidth) {
+    for (const [perimerterEdgeId, perimeterEdgeValue] of perimeterEdges) {
+      const { from, to } = perimeterEdgeValue.points;
+
+      const edgeWidth = edgeLengthFromCoordinates(
+        from.coordinates,
+        to.coordinates
+      );
+
+      const validatedImages = determineValidImages(
+        currentLoadedImages,
+        edgeWidth
+      );
+
+      if (validatedImages.length === 0) {
         continue;
       }
 
-      const validatedImage = {
-        imageId,
-        validHeight: height <= edgeWidth,
-        validWidth: width <= edgeWidth,
-      };
-
-      validatedImages.push(validatedImage);
-    }
-
-    if (validatedImages.length === 0) {
-      return;
-    }
-
-    const imagesToAdd: Array<PlaceDimensionImage> = [];
-
-    while (edgeWidth > 0) {
-      const randomIdx = getRandomIndex(validatedImages);
-
-      const { imageId, validHeight, validWidth } = validatedImages[randomIdx];
-
-      const imageValue = currentLoadedImages.get(imageId)!;
-
-      // width then height
-
-      const remainingWidth = validWidth
-        ? edgeWidth - imageValue.width
-        : edgeWidth - imageValue.height;
-
-      if (remainingWidth < 0) {
-        break;
-      }
-
-      edgeWidth = remainingWidth;
-
-      imagesToAdd.push({
-        imageId,
-        imageValue,
-        placeByWidth: validWidth,
-      });
-    }
-
-    const yDelta = to.coordinates.y - from.coordinates.y;
-    const xDelta = to.coordinates.x - from.coordinates.x;
-
-    const ogGradient = yDelta / xDelta;
-
-    const perpendicularGradient = -1 / ogGradient;
-
-    const rotation = getDegreesFromNonHypotenuseSides(
-      1,
-      1 * perpendicularGradient
-    );
-
-    const positionedImages = imagesToAdd.map((placeDimensionImage) => {
-      const across = placeDimensionImage.placeByWidth
-        ? placeDimensionImage.imageValue.width / 2
-        : placeDimensionImage.imageValue.height / 2;
-
-      const away = placeDimensionImage.placeByWidth
-        ? placeDimensionImage.imageValue.height / 2
-        : placeDimensionImage.imageValue.width / 2;
-
-      if (withinEpsilonBounds(yDelta, 0, 1000)) {
-        if (from.coordinates.x < to.coordinates.x) {
-          return {
-            image: placeDimensionImage.imageValue,
-            position: {
-              x: from.coordinates.x + across,
-              y: from.coordinates.y - away,
-            },
-            rotation: placeDimensionImage.placeByWidth ? 0 : 270,
-          };
-        } else {
-          return {
-            image: placeDimensionImage.imageValue,
-            position: {
-              x: from.coordinates.x - across,
-              y: from.coordinates.y + away,
-            },
-            rotation: placeDimensionImage.placeByWidth ? 180 : 90,
-          };
-        }
-      }
-
-      if (withinEpsilonBounds(xDelta, 0, 1000)) {
-        if (from.coordinates.y < to.coordinates.y) {
-          return {
-            image: placeDimensionImage.imageValue,
-            position: {
-              x: from.coordinates.x + away,
-              y: from.coordinates.y + across,
-            },
-            rotation: placeDimensionImage.placeByWidth ? 90 : 0,
-          };
-        } else {
-          return {
-            image: placeDimensionImage.imageValue,
-            position: {
-              x: from.coordinates.x - away,
-              y: from.coordinates.y - across,
-            },
-            rotation: placeDimensionImage.placeByWidth ? 270 : 180,
-          };
-        }
-      }
-
-      return positionImagesAlongEdge(
-        from.coordinates,
-        to.coordinates,
-        placeDimensionImage
+      const imagesToAdd = determineImagesToAdd(
+        edgeWidth,
+        currentLoadedImages,
+        validatedImages
       );
-    });
 
-    await handleAddPositionedImages(positionedImages);
+      const positionedImages = generatePositionImages(
+        imagesToAdd,
+        from.coordinates,
+        to.coordinates
+      );
+
+      handleAddPositionedImages(positionedImages);
+    }
   };
 
   return (
