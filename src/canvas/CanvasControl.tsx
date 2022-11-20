@@ -130,7 +130,7 @@ const determineImagesToAdd = (
       ? remainingWidth - imageValue.width
       : remainingWidth - imageValue.height;
 
-    if (updatedWidth < 0) {
+    if (updatedWidth < 2) {
       break;
     }
 
