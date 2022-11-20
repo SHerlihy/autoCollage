@@ -59,13 +59,7 @@ const positionImagesAlongEdge = (
   to: ICoordinates,
   image: PlaceDimensionImage
 ): IPositionedImage => {
-  const across = image.placeByWidth
-    ? image.imageValue.width / 2
-    : image.imageValue.height / 2;
-
-  const away = image.placeByWidth
-    ? image.imageValue.height / 2
-    : image.imageValue.width / 2;
+  const { across, away } = image;
 
   const { coordinates, rotation } = calculatePerpendicular(
     from,
