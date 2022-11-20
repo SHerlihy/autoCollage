@@ -8,6 +8,7 @@ export interface IPositionedImage {
   image: HTMLImageElement;
   position: ICoordinates;
   rotation?: number;
+  thresholdMod?: number;
 }
 
 // remember idea of using gradient on perimeter points and an offset to fill after fillCrevices
@@ -21,18 +22,6 @@ export const drawLoadedImages = (
     const { width, height } = image;
 
     ctx.translate(x, y);
-
-    // const adjustedRotation = rotation % 45;
-
-    // const hyp = getHypotenuseSideFromSides(width/2, height/2);
-
-    // const xLength = SOHOppositeSideFromDegrees(hyp, 45 - adjustedRotation)
-
-    // const centerCoordinate =
-
-    // ctx.translate(x + width / 2, y + height / 2);
-
-    ///maybe change all prev to rotate about center instead of top left
 
     if (rotation) {
       const rotateRads = rotation * Math.PI;

@@ -3,9 +3,10 @@ import {
   coordinatesToPoint,
   coordinatesArrToLinkedPointsMap,
 } from "./pointsHelper";
-import { ICoordinates } from "./pointsTypes";
+import { ICoordinates, IPoint } from "./pointsTypes";
 
 const setupPoints = (
+  coordinatesA: ICoordinates,
   coordinatesB: ICoordinates,
   otherCoordinates: ICoordinates[]
 ) => {
@@ -16,6 +17,8 @@ const setupPoints = (
 
   allPoints.get(pointAPredecessor.currentImgPointId)!.nextImgPointId = "pointA";
 
+  const pointA = coordinatesToPoint(coordinatesA, "002", "pointA", "pointB");
+
   const pointB = coordinatesToPoint(
     coordinatesB,
     "001",
@@ -23,11 +26,13 @@ const setupPoints = (
     pointBSuccessor.currentImgPointId
   );
 
+  allPoints.set(pointA.currentImgPointId, pointA);
   allPoints.set(pointB.currentImgPointId, pointB);
 
   return {
     allPoints,
     pointB,
+    pointA,
   };
 };
 
@@ -41,9 +46,13 @@ const runDetermineNextPoint = (
     ? [interruptCoordinates, ...fillerCoordinates]
     : [interruptCoordinates];
 
-  const { allPoints, pointB } = setupPoints(coordinatesB, allOtherCoordinates);
+  const { allPoints, pointB, pointA } = setupPoints(
+    coordinatesA,
+    coordinatesB,
+    allOtherCoordinates
+  );
 
-  const nextPoint = determineNextPoint(coordinatesA, pointB, allPoints);
+  const nextPoint = determineNextPoint(pointA, pointB, allPoints, []);
 
   const pointInterrupt = [...allPoints.values()].find((point) => {
     return (
@@ -60,16 +69,16 @@ const runDetermineNextPoint = (
 };
 
 type RunTestDetermineNext = (
-  expectIntercept: boolean,
   coordinatesA: ICoordinates,
+  expectIntercept: boolean,
   coordinatesB: ICoordinates,
   coordinatesPotentialNext: ICoordinates,
   fillerCoordinates?: ICoordinates[]
 ) => void;
 
 const runTestDetermineNext = (
-  expectIntercept: boolean,
   coordinatesA: ICoordinates,
+  expectIntercept: boolean,
   coordinatesB: ICoordinates,
   coordinatesPotentialNext: ICoordinates,
   fillerCoordinates?: ICoordinates[]
@@ -98,8 +107,8 @@ function curryRunTestDetermineNext(runFunc: RunTestDetermineNext) {
       return function (expectIntercept: boolean) {
         return function (coordinatesPotentialNext: ICoordinates) {
           return runFunc(
-            expectIntercept,
             coordinatesA,
+            expectIntercept,
             coordinatesB,
             coordinatesPotentialNext,
             fillerCoordinates

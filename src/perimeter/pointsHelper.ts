@@ -247,7 +247,7 @@ const calculatePointsWithRotation = (
 export const imagesToPointsMap = (positionedImagesArr: IPositionedImage[]) => {
   // will need to factor in rotation
   const allImagePointsMap = positionedImagesArr.reduce(
-    (acc, { image, position, rotation = 0 }) => {
+    (acc, { image, position, rotation = 0, thresholdMod }) => {
       const { width, height } = image;
 
       const hyp = getHypotenuseSideFromSides(width / 2, height / 2);

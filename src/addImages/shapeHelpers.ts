@@ -13,8 +13,16 @@ export const lineDirection = (
   lineStartCoordinates: ICoordinates,
   lineEndCoordinates: ICoordinates
 ) => {
-  const horizontal = lineStartCoordinates.y === lineEndCoordinates.y;
-  const vertical = lineStartCoordinates.x === lineEndCoordinates.x;
+  const horizontal = withinEpsilonBounds(
+    lineStartCoordinates.y,
+    lineEndCoordinates.y,
+    99999
+  );
+  const vertical = withinEpsilonBounds(
+    lineStartCoordinates.x,
+    lineEndCoordinates.x,
+    99999
+  );
 
   const goingDown =
     lineStartCoordinates.y < lineEndCoordinates.y ? "down" : "up";
@@ -135,8 +143,6 @@ export const validatePerimeter = (
     }
 
     lastValidIdx = validIdx;
-
-    return true;
   }
 
   return subjectIsValid ? subjectPerimeter : validPerimeter;

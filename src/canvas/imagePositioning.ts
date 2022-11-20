@@ -24,26 +24,51 @@ export const positionImagesClosure = (
   ) => {
     const loadedImages = getLoadedImages();
 
-    for (const additionalPositionedImage of additionalPositionedImages) {
-      const isLoaded = loadedImages?.get(
-        additionalPositionedImage.image.src.replace(window.location.origin, "")
-      );
+    await additionalPositionedImages.forEach(
+      async (additionalPositionedImage, idx) => {
+        const isLoaded = loadedImages?.get(
+          additionalPositionedImage.image.src.replace(
+            window.location.origin,
+            ""
+          )
+        );
 
-      if (isLoaded === undefined) {
-        await loadNewImages([additionalPositionedImage.image.src]);
+        if (isLoaded === undefined) {
+          await loadNewImages([additionalPositionedImage.image.src]);
+        }
+
+        allPositionedImages.set(
+          CreateIds.getInstance().generateNovelId(),
+          additionalPositionedImage
+        );
+
+        const currentImagePoints = imagesToPointsMap([
+          additionalPositionedImage,
+        ]);
+
+        if (
+          additionalPositionedImage.thresholdMod &&
+          idx === additionalPositionedImages.length - 1
+        ) {
+          const [edgeFromId, edgeFromVal] = [...currentImagePoints][
+            currentImagePoints.size - 3
+          ];
+          const [edgeToId, edgeToVal] = [...currentImagePoints][
+            currentImagePoints.size - 2
+          ];
+
+          edgeFromVal.thresholdMod = additionalPositionedImage.thresholdMod;
+          edgeToVal.thresholdMod = additionalPositionedImage.thresholdMod;
+
+          currentImagePoints.set(edgeFromId, edgeFromVal);
+          currentImagePoints.set(edgeToId, edgeToVal);
+        }
+
+        for (const [currentPointId, currentPointValue] of currentImagePoints) {
+          allImagePoints.set(currentPointId, currentPointValue);
+        }
       }
-
-      allPositionedImages.set(
-        CreateIds.getInstance().generateNovelId(),
-        additionalPositionedImage
-      );
-
-      const currentImagePoints = imagesToPointsMap([additionalPositionedImage]);
-
-      for (const [currentPointId, currentPointValue] of currentImagePoints) {
-        allImagePoints.set(currentPointId, currentPointValue);
-      }
-    }
+    );
 
     handleDrawAllItems();
   };
@@ -58,24 +83,24 @@ export const positionImagesClosure = (
     const forkHandle = {
       image: startImg,
       position: { x: startImg.width / 2, y: startImg.height / 2 },
-      rotation: 10,
+      rotation: 0,
     };
-    const prongLeft = {
-      image: startImg,
-      position: { x: -startImg.width / 4, y: -startImg.height / 2 },
-      rotation: 10,
-    };
-    const prongRight = {
-      image: startImg,
-      position: { x: startImg.width, y: -startImg.height / 2 },
-    };
-    const pronged = {
-      image: startImg,
-      position: { x: startImg.width / 2, y: -startImg.height * 1.5 },
-      rotation: 300,
-    };
+    // const prongLeft = {
+    //   image: startImg,
+    //   position: { x: -startImg.width / 4, y: -startImg.height / 2 },
+    //   rotation: 10,
+    // };
+    // const prongRight = {
+    //   image: startImg,
+    //   position: { x: startImg.width, y: -startImg.height / 2 },
+    // };
+    // const pronged = {
+    //   image: startImg,
+    //   position: { x: startImg.width / 2, y: -startImg.height * 1.5 },
+    //   rotation: 300,
+    // };
 
-    handleAddPositionedImages([forkHandle, prongLeft, prongRight, pronged]);
+    handleAddPositionedImages([forkHandle]);
   };
 
   const handleDrawAllItems = () => {

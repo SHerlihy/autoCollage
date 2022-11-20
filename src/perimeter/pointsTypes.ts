@@ -8,6 +8,7 @@ export interface IPoint {
   currentImgPointId: string;
   nextImgPointId: string;
   coordinates: ICoordinates;
+  thresholdMod?: number;
 }
 
 export interface IPointsMap extends Map<string, IPoint> {}

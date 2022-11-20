@@ -5,7 +5,9 @@ import { useCanvasPositioner } from "./useCanvasPositioner";
 import { positionImagesClosure } from "./imagePositioning";
 
 // @ts-ignore
-// import cat03 from "../../src/assets/cat03.jpg";
+import cat03 from "../../src/assets/cat03.jpg";
+// @ts-ignore
+import fiftyFifty from "../../src/assets/5050.jpeg";
 
 import { generateEdgesMap } from "../addImages/generateEdgesMap";
 
@@ -22,6 +24,9 @@ import { IPositionedImage } from "../drawings/sampleDrawing";
 import { calculatePerpendicular } from "../perimeter/pointsHelper";
 import { getRandomIndex } from "../perimeter/arrayHelpers";
 import { withinEpsilonBounds } from "../perimeter/mathHelpers";
+import { determinePerimeter } from "../perimeter/determinePerimeter";
+import { fillCrevices } from "../addImages/fillCrevices";
+import { determineCrevicedPerimeterPoints } from "../perimeter/determineCrevicedPerimeter";
 
 const loadedImagesClosureResults = loadedImagesClosure();
 const { getLoadedImages, loadNewImages } = loadedImagesClosureResults;
@@ -46,6 +51,7 @@ type PlaceDimensionImage = {
   placeByWidth: boolean;
   across: number;
   away: number;
+  thresholdMod?: number;
 };
 
 const positionImagesAlongEdge = (
@@ -102,13 +108,16 @@ const determineValidImages = (
 const determineImagesToAdd = (
   edgeWidth: number,
   currentLoadedImages: Map<string, HTMLImageElement>,
-  validatedImages: ValidatedImage[]
+  validatedImages: ValidatedImage[],
+  awayMod = 2
 ) => {
   const imagesToAdd: Array<PlaceDimensionImage> = [];
 
+  let remainingWidth = edgeWidth;
+
   let acrossAccumulator = 0;
 
-  while (edgeWidth > 0) {
+  while (remainingWidth > 0) {
     const randomIdx = getRandomIndex(validatedImages);
 
     const { imageId, validHeight, validWidth } = validatedImages[randomIdx];
@@ -117,15 +126,15 @@ const determineImagesToAdd = (
 
     // width then height
 
-    const remainingWidth = validWidth
-      ? edgeWidth - imageValue.width
-      : edgeWidth - imageValue.height;
+    const updatedWidth = validWidth
+      ? remainingWidth - imageValue.width
+      : remainingWidth - imageValue.height;
 
-    if (remainingWidth < 0) {
+    if (updatedWidth < 0) {
       break;
     }
 
-    edgeWidth = remainingWidth;
+    remainingWidth = updatedWidth;
 
     const acrossAdditionalSpace = validWidth
       ? imageValue.width
@@ -135,7 +144,9 @@ const determineImagesToAdd = (
 
     acrossAccumulator = acrossAccumulator + acrossAdditionalSpace;
 
-    const away = validWidth ? imageValue.height / 2 : imageValue.width / 2;
+    const away = validWidth
+      ? imageValue.height / 2 + awayMod
+      : imageValue.width / 2 + awayMod;
 
     imagesToAdd.push({
       imageId,
@@ -146,7 +157,16 @@ const determineImagesToAdd = (
     });
   }
 
-  return imagesToAdd;
+  const positionedImagesToAdd = imagesToAdd.map((imageToAdd, idx) => {
+    imageToAdd.across = imageToAdd.across + remainingWidth / 2;
+    if (idx === imagesToAdd.length - 1) {
+      imageToAdd.thresholdMod = remainingWidth / 2;
+    }
+
+    return imageToAdd;
+  });
+
+  return positionedImagesToAdd;
 };
 
 const generatePositionImages = (
@@ -160,9 +180,11 @@ const generatePositionImages = (
   const positionedImages = imagesToAdd.map((placeDimensionImage) => {
     const { across, away } = placeDimensionImage;
 
+    let generatedImage;
+
     if (withinEpsilonBounds(yDelta, 0, 1000)) {
       if (from.x < to.x) {
-        return {
+        generatedImage = {
           image: placeDimensionImage.imageValue,
           position: {
             x: from.x + across,
@@ -171,7 +193,7 @@ const generatePositionImages = (
           rotation: placeDimensionImage.placeByWidth ? 0 : 270,
         };
       } else {
-        return {
+        generatedImage = {
           image: placeDimensionImage.imageValue,
           position: {
             x: from.x - across,
@@ -184,7 +206,7 @@ const generatePositionImages = (
 
     if (withinEpsilonBounds(xDelta, 0, 1000)) {
       if (from.y < to.y) {
-        return {
+        generatedImage = {
           image: placeDimensionImage.imageValue,
           position: {
             x: from.x + away,
@@ -193,7 +215,7 @@ const generatePositionImages = (
           rotation: placeDimensionImage.placeByWidth ? 90 : 0,
         };
       } else {
-        return {
+        generatedImage = {
           image: placeDimensionImage.imageValue,
           position: {
             x: from.x - away,
@@ -204,7 +226,17 @@ const generatePositionImages = (
       }
     }
 
-    return positionImagesAlongEdge(from, to, placeDimensionImage);
+    if (generatedImage) {
+      generatedImage.thresholdMod = placeDimensionImage.thresholdMod;
+
+      return generatedImage;
+    }
+
+    generatedImage = positionImagesAlongEdge(from, to, placeDimensionImage);
+
+    generatedImage.thresholdMod = placeDimensionImage.thresholdMod;
+
+    return generatedImage;
   });
 
   return positionedImages;
@@ -245,6 +277,18 @@ export const CanvasControl = () => {
     );
 
     setPerimeterPoints(perimeterPoints);
+  };
+
+  const handleFillCrevices = () => {
+    const positionedImagesPoints = getAllImagePoints();
+
+    const updatedPerimeter = determineCrevicedPerimeterPoints(
+      positionedImagesPoints
+    );
+
+    const { filledPerimeter } = fillCrevices(updatedPerimeter, 277);
+
+    setPerimeterPoints(filledPerimeter);
   };
 
   const handleAddImages = async () => {
@@ -302,6 +346,7 @@ export const CanvasControl = () => {
       <article className="sidebar">
         <button
           onClick={() => {
+            loadNewImages([cat03, fiftyFifty]);
             // so it loads
             // setImages([cat03]);
             // so it draws
@@ -311,6 +356,7 @@ export const CanvasControl = () => {
           Cats!
         </button>
         <button onClick={handleAgglomerateImages}>Agglomerate</button>
+        <button onClick={handleFillCrevices}>Fill</button>
         <button onClick={handleAddImages}>Add Images</button>
       </article>
     </main>

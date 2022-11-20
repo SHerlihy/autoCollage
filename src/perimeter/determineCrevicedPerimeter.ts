@@ -97,6 +97,7 @@ const determineRemainingPerimeterPointIds = (
   allPoints: IPointsMap
 ): IPointsMap => {
   const perimeterPoints = new Map<string, IPoint>();
+  const visitedPoints: Array<string> = [];
 
   const newCurrentPoint = setFirstPerimeterPoints(
     startingPointId,
@@ -106,6 +107,7 @@ const determineRemainingPerimeterPointIds = (
 
   const { nextImgPointId: newNextImgPointId } = newCurrentPoint;
 
+  visitedPoints.push(startingNextImagePointId);
   perimeterPoints.set(startingPointId, newCurrentPoint);
 
   if (newNextImgPointId === startingPointId) {
@@ -127,7 +129,8 @@ const determineRemainingPerimeterPointIds = (
     allOtherPoints,
     perimeterPoints,
     thresholdManagement,
-    recursionManagement
+    recursionManagement,
+    visitedPoints
   );
 
   return perimeterPoints;
@@ -141,11 +144,14 @@ const setRemainingPerimeterPoints = (
   allOtherPoints: IPointsMap,
   perimeterPoints: Map<string, IPoint>,
   thresholdManagement: IThresholdManagement,
-  recursionManagement: IRecursionManager
+  recursionManagement: IRecursionManager,
+  visitedPoints: string[]
 ) => {
   const potentialNextPoint = allPoints.get(potentialNextPointId)!;
 
   const currentPoint = allPoints.get(currentPointId)!;
+
+  console.log(currentPoint.coordinates);
 
   const { coordinates: currentImageCoordinate } = currentPoint;
 
@@ -165,9 +171,10 @@ const setRemainingPerimeterPoints = (
   let nextPointId = thresholdManagement.isBelowBase()
     ? potentialNextPointId
     : determineNextPoint(
-        currentImageCoordinate,
+        currentPoint,
         potentialNextPoint,
         otherPoints,
+        visitedPoints,
         thresholdManagement.getThreshold()
       );
 
@@ -180,19 +187,24 @@ const setRemainingPerimeterPoints = (
     return;
   }
 
-  if (perimeterPoints.has(nextPointId)) {
-    handleLooping(
-      startingPointId,
-      nextPointId,
-      allPoints,
-      allOtherPoints,
-      perimeterPoints,
-      thresholdManagement,
-      recursionManagement
-    );
+  visitedPoints.push(nextPointId);
+  visitedPoints.push(potentialNextPointId);
+  visitedPoints.push(currentPointId);
 
-    return;
-  }
+  // if (perimeterPoints.has(nextPointId)) {
+  //   handleLooping(
+  //     startingPointId,
+  //     nextPointId,
+  //     allPoints,
+  //     allOtherPoints,
+  //     perimeterPoints,
+  //     thresholdManagement,
+  //     recursionManagement,
+  //     visitedPoints
+  //   );
+
+  //   return;
+  // }
 
   const newCurrentPoint = { ...allPoints.get(currentPointId)! };
   newCurrentPoint.nextImgPointId = nextPointId;
@@ -209,7 +221,8 @@ const setRemainingPerimeterPoints = (
     allOtherPoints,
     perimeterPoints,
     thresholdManagement,
-    recursionManagement
+    recursionManagement,
+    visitedPoints
   );
 
   return;
@@ -222,7 +235,8 @@ const handleLooping = (
   allOtherPoints: IPointsMap,
   perimeterPoints: Map<string, IPoint>,
   thresholdManagement: IThresholdManagement,
-  recursionManagement: IRecursionManager
+  recursionManagement: IRecursionManager,
+  visitedPoints: string[]
 ) => {
   const perimeterIdsArr = [...perimeterPoints.keys()];
   const initialLoopIdx = perimeterIdsArr.findIndex((pointId) => {
@@ -249,7 +263,8 @@ const handleLooping = (
     allOtherPoints,
     perimeterPoints,
     thresholdManagement,
-    recursionManagement
+    recursionManagement,
+    visitedPoints
   );
 };
 
@@ -260,17 +275,17 @@ const setFirstPerimeterPoints = (
 ) => {
   const potentialNextPoint = allPoints.get(startingNextImagePointId)!;
 
-  const { coordinates: currentImageCoordinate } =
-    allPoints.get(startingPointId)!;
+  const startingPoint = allPoints.get(startingPointId)!;
 
   const firstPassPoints = new Map(allPoints);
 
   firstPassPoints.delete(startingPointId);
 
   const nextPointId = determineNextPoint(
-    currentImageCoordinate,
+    startingPoint,
     potentialNextPoint,
-    firstPassPoints
+    firstPassPoints,
+    []
   );
 
   const newCurrentPoint = { ...allPoints.get(startingPointId)! };

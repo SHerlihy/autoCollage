@@ -1,4 +1,5 @@
-import { generateFulfilledPromisesMap } from "../promiseHelpers";
+import { addMapToMap } from "../perimeter/mapHelpers";
+import { generateImagesPromisesMap } from "../promiseHelpers";
 
 const loadImage = async (
   imageSource: string,
@@ -11,14 +12,16 @@ const loadImage = async (
   });
 };
 
-export const loadImages = (imageSources: Array<string>) => {
+export const loadImages = async (imageSources: Array<string>) => {
   const loadingImages: Promise<HTMLImageElement>[] = imageSources.map(
     (imageSource) => {
       return new Promise((res) => loadImage(imageSource, res));
     }
   );
 
-  const loadedImages = Promise.allSettled(loadingImages);
+  const loadedImages = await Promise.all(loadingImages).then((results) => {
+    return results;
+  });
 
   return {
     getLoadedImages: async () => {
@@ -42,13 +45,26 @@ export const loadedImagesClosure = (): ILoadedImagesClosureResults => {
       return hasLoaded === undefined;
     });
 
-    const { getLoadedImages } = loadImages(unloadedImages);
-    const allLoadedImages = await getLoadedImages();
-
-    const fulfilledLoadedImages = generateFulfilledPromisesMap(
-      unloadedImages,
-      allLoadedImages
+    const { getLoadedImages: getNewLoadedImages } = await loadImages(
+      unloadedImages
     );
+    const newLoadedImages = await getNewLoadedImages();
+    const newLoadedImagesKeys = newLoadedImages.map((loadedImage) => {
+      return loadedImage.src;
+    });
+
+    const prevLoadedImages = await getLoadedImages();
+
+    const newLoadeImagesMap = generateImagesPromisesMap(
+      newLoadedImagesKeys,
+      newLoadedImages
+    );
+
+    const fulfilledLoadedImages =
+      prevLoadedImages !== undefined
+        ? addMapToMap(prevLoadedImages, newLoadeImagesMap)
+        : newLoadeImagesMap;
+
     loadedImages = fulfilledLoadedImages;
     return;
   };

@@ -48,46 +48,47 @@ const validAreaOnAxisLine = (
   { x: currentX, y: currentY }: ICoordinates,
   { x: nextX, y: nextY }: ICoordinates,
   offset: number,
-  direction: string
+  direction: string,
+  underMod = 2
 ) => {
   if (direction === "right") {
-    const BL = { x: currentX, y: currentY };
-    const BR = { x: nextX + offset, y: nextY };
+    const BL = { x: currentX, y: currentY + underMod };
+    const BR = { x: nextX + offset, y: nextY + underMod };
 
-    const TL = { x: BL.x, y: BL.y - offset };
-    const TR = { x: BR.x, y: BR.y - offset };
+    const TL = { x: currentX, y: currentY - offset };
+    const TR = { x: nextX, y: nextY - offset };
 
     const validArea = { TL, TR, BR, BL };
     return validArea;
   }
   if (direction === "left") {
-    const BL = { x: currentX, y: currentY };
-    const BR = { x: nextX - offset, y: nextY };
+    const BL = { x: currentX, y: currentY - underMod };
+    const BR = { x: nextX - offset, y: nextY - underMod };
 
-    const TL = { x: BL.x, y: BL.y + offset };
-    const TR = { x: BR.x, y: BR.y + offset };
+    const TL = { x: currentX, y: currentY + offset };
+    const TR = { x: nextX, y: nextY + offset };
 
     const validArea = { TL, TR, BR, BL };
     return validArea;
   }
 
   if (direction === "down") {
-    const BL = { x: currentX, y: currentY };
-    const BR = { x: nextX, y: nextY + offset };
+    const BL = { x: currentX - underMod, y: currentY };
+    const BR = { x: nextX - underMod, y: nextY + offset };
 
-    const TL = { x: BL.x + offset, y: BL.y };
-    const TR = { x: BR.x + offset, y: BR.y };
+    const TL = { x: currentX + offset, y: currentY };
+    const TR = { x: nextX + offset, y: nextY };
 
     const validArea = { TL, TR, BR, BL };
     return validArea;
   }
 
   if (direction === "up") {
-    const BL = { x: currentX, y: currentY };
-    const BR = { x: nextX, y: nextY - offset };
+    const BL = { x: currentX + underMod, y: currentY };
+    const BR = { x: nextX + underMod, y: nextY - offset };
 
-    const TL = { x: BL.x - offset, y: BL.y };
-    const TR = { x: BR.x - offset, y: BR.y };
+    const TL = { x: currentX - offset, y: currentY };
+    const TR = { x: nextX - offset, y: nextY };
 
     const validArea = { TL, TR, BR, BL };
     return validArea;
@@ -101,7 +102,8 @@ const validAreaOnDiagonalLine = (
   { x: nextX, y: nextY }: ICoordinates,
   offset: number,
   xDirection: string,
-  yDirection: string
+  yDirection: string,
+  underMod = 4
 ) => {
   const opposite = nextY - currentY;
   const adjacent = nextX - currentX;
@@ -123,45 +125,59 @@ const validAreaOnDiagonalLine = (
 
   const BL = { x: currentX, y: currentY };
 
-  let BRx, BRy, TRx, TRy, TLx, TLy;
+  let BLx, BLy, BRx, BRy, TRx, TRy, TLx, TLy;
 
   if (xDirection === "right") {
-    BRx = nextX + xLength;
     if (yDirection === "down") {
-      BRy = nextY + yLength;
+      BLx = currentX - underMod;
+      BLy = currentY + underMod;
 
-      TRx = BRx + yLength;
-      TRy = BRy - xLength;
+      BRx = nextX + xLength - underMod;
+      BRy = nextY + yLength + underMod;
 
-      TLx = BL.x + yLength;
-      TLy = BL.y - xLength;
+      TRx = nextX + xLength + yLength;
+      TRy = nextY + yLength - xLength;
+
+      TLx = currentX + yLength;
+      TLy = currentY - xLength;
     } else {
-      BRy = nextY - yLength;
+      BLx = currentX + underMod;
+      BLy = currentY + underMod;
 
-      TRx = BRx - yLength;
-      TRy = BRy - xLength;
+      BRx = nextX + xLength + underMod;
+      BRy = nextY - yLength + underMod;
 
-      TLx = BL.x - yLength;
-      TLy = BL.y - xLength;
+      TRx = nextX + xLength - yLength;
+      TRy = nextY - yLength - xLength;
+
+      TLx = currentX - yLength;
+      TLy = currentY - xLength;
     }
   } else {
-    BRx = nextX - xLength;
     if (yDirection === "down") {
-      BRy = nextY + yLength;
+      BLx = currentX - underMod;
+      BLy = currentY - underMod;
 
-      TRx = BRx + yLength;
-      TRy = BRy + xLength;
+      BRx = nextX - xLength - underMod;
+      BRy = nextY + yLength - underMod;
 
-      TLx = BL.x + yLength;
-      TLy = BL.y + xLength;
+      TRx = nextX - xLength + yLength;
+      TRy = nextY + yLength + xLength;
+
+      TLx = currentX + yLength;
+      TLy = currentY + xLength;
     } else {
-      BRy = nextY - yLength;
+      BLx = currentX + underMod;
+      BLy = currentY - underMod;
 
-      TRx = BRx - yLength;
-      TRy = BRy + xLength;
+      BRx = nextX - xLength + underMod;
+      BRy = nextY - yLength - underMod;
 
-      TLx = BL.x - yLength;
-      TLy = BL.y + xLength;
+      TRx = nextX - xLength - yLength;
+      TRy = nextY - yLength + xLength;
+
+      TLx = currentX - yLength;
+      TLy = currentY + xLength;
     }
   }
 
