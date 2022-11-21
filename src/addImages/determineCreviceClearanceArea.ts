@@ -92,6 +92,7 @@ export const determineCreviceClearanceArea = (
     topLeftToLeftClearanceLength
   );
 
+  // map would be better for iterating through
   return {
     tl: leftTopClearanceCoordinate,
     tr: rightTopClearanceCoordinate,
@@ -99,8 +100,6 @@ export const determineCreviceClearanceArea = (
     bl: leftMinWidthCoordinate,
   };
 };
-
-
 
 const determineClearance = (
   subjectEdgeLength: number,

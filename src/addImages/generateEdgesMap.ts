@@ -1,5 +1,4 @@
 import { IPointsMap } from "../perimeter/pointsTypes";
-import { CreateIds } from "./createIds";
 import {
   AngleType,
   determinePointTypes,
@@ -52,7 +51,7 @@ const generateEdgesArray = (perimeterPoints: ITypedPointsMap): IEdge[] => {
       );
     }
 
-    const nextEdge = CreateIds.getInstance().generateNovelId();
+    const nextEdge = from.currentImgPointId + to.currentImgPointId;
 
     const perimeterEdge = {
       points: {

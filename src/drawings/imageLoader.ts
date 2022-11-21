@@ -12,27 +12,24 @@ const loadImage = async (
   });
 };
 
-export const loadImages = async (imageSources: Array<string>) => {
+export const loadImages = (imageSources: Array<string>) => {
   const loadingImages: Promise<HTMLImageElement>[] = imageSources.map(
     (imageSource) => {
       return new Promise((res) => loadImage(imageSource, res));
     }
   );
 
-  const loadedImages = await Promise.all(loadingImages).then((results) => {
+  return Promise.all(loadingImages).then((results) => {
     return results;
   });
-
-  return {
-    getLoadedImages: async () => {
-      return await loadedImages;
-    },
-  };
 };
+
+export type MinImage = { image: HTMLImageElement; minDimension: number };
 
 export interface ILoadedImagesClosureResults {
   getLoadedImages: () => Map<string, HTMLImageElement> | undefined;
   loadNewImages: (images: string[]) => Promise<void>;
+  getMinimumImage: () => MinImage | undefined;
 }
 
 export const loadedImagesClosure = (): ILoadedImagesClosureResults => {
@@ -45,10 +42,8 @@ export const loadedImagesClosure = (): ILoadedImagesClosureResults => {
       return hasLoaded === undefined;
     });
 
-    const { getLoadedImages: getNewLoadedImages } = await loadImages(
-      unloadedImages
-    );
-    const newLoadedImages = await getNewLoadedImages();
+    const newLoadedImages = await loadImages(unloadedImages);
+
     const newLoadedImagesKeys = newLoadedImages.map((loadedImage) => {
       return loadedImage.src;
     });
@@ -73,5 +68,37 @@ export const loadedImagesClosure = (): ILoadedImagesClosureResults => {
     return loadedImages;
   };
 
-  return { getLoadedImages, loadNewImages };
+  const getMinimumImage = () => {
+    if (!loadedImages) {
+      return;
+    }
+
+    // @ts-ignore
+    let minImage: MinImage;
+
+    for (const [loadedKey, loadedVal] of loadedImages) {
+      const loadedMinDimension =
+        loadedVal.width < loadedVal.height ? loadedVal.width : loadedVal.height;
+
+      // @ts-ignore
+
+      if (!minImage) {
+        minImage = {
+          image: loadedVal,
+          minDimension: loadedMinDimension,
+        };
+      }
+
+      if (loadedMinDimension < minImage.minDimension) {
+        minImage.image = loadedVal;
+        minImage.minDimension = loadedMinDimension;
+      }
+    }
+
+    // @ts-ignore
+
+    return minImage;
+  };
+
+  return { getLoadedImages, loadNewImages, getMinimumImage };
 };

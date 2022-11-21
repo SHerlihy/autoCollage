@@ -24,18 +24,24 @@ export const positionImagesClosure = (
   ) => {
     const loadedImages = getLoadedImages();
 
+    const ensureLoaded = async (
+      additionalPositionedImage: IPositionedImage
+    ) => {
+      const isLoaded = loadedImages?.get(
+        additionalPositionedImage.image.src.replace(window.location.origin, "")
+      );
+
+      if (isLoaded === undefined) {
+        await loadNewImages([additionalPositionedImage.image.src]);
+        return;
+      } else {
+        return;
+      }
+    };
+
     await additionalPositionedImages.forEach(
       async (additionalPositionedImage, idx) => {
-        const isLoaded = loadedImages?.get(
-          additionalPositionedImage.image.src.replace(
-            window.location.origin,
-            ""
-          )
-        );
-
-        if (isLoaded === undefined) {
-          await loadNewImages([additionalPositionedImage.image.src]);
-        }
+        await (async () => ensureLoaded(additionalPositionedImage))();
 
         allPositionedImages.set(
           CreateIds.getInstance().generateNovelId(),
@@ -71,6 +77,12 @@ export const positionImagesClosure = (
     );
 
     handleDrawAllItems();
+  };
+
+  const setUpdatedPoints = (updatedPoints: Array<IPoint>) => {
+    updatedPoints.forEach((updatedPoint) => {
+      allImagePoints.set(updatedPoint.currentImgPointId, updatedPoint);
+    });
   };
 
   const handleAddInitialItems = async () => {
@@ -130,5 +142,6 @@ export const positionImagesClosure = (
     handleDrawAllItems,
     getAllImagePoints,
     setCanvasContext,
+    setUpdatedPoints,
   };
 };

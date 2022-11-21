@@ -99,7 +99,7 @@ const isLeftOfEdgeGradient = (
       return true;
     }
     if (yToPointDirection === "down" && xToPointDirection === "right") {
-      false;
+      return false;
     }
   }
 
@@ -148,6 +148,8 @@ const isLeftOfEdgeGradient = (
       return toPointGrad > lineGrad;
     }
   }
+
+  return false;
 };
 
 const isLeftOfEdgeDirectional = (

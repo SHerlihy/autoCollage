@@ -9,7 +9,7 @@ import cat03 from "../../src/assets/cat03.jpg";
 // @ts-ignore
 import fiftyFifty from "../../src/assets/5050.jpeg";
 
-import { generateEdgesMap } from "../addImages/generateEdgesMap";
+import { generateEdgesMap, IEdge } from "../addImages/generateEdgesMap";
 
 import {
   determineAgglomeratedPerimeterIds,
@@ -29,7 +29,8 @@ import { fillCrevices } from "../addImages/fillCrevices";
 import { determineCrevicedPerimeterPoints } from "../perimeter/determineCrevicedPerimeter";
 
 const loadedImagesClosureResults = loadedImagesClosure();
-const { getLoadedImages, loadNewImages } = loadedImagesClosureResults;
+const { getLoadedImages, loadNewImages, getMinimumImage } =
+  loadedImagesClosureResults;
 
 const {
   handleDrawAllItems,
@@ -37,6 +38,7 @@ const {
   handleAddPositionedImages,
   getAllImagePoints,
   setCanvasContext,
+  setUpdatedPoints,
 } = positionImagesClosure(loadedImagesClosureResults);
 
 type ValidatedImage = {
@@ -241,6 +243,9 @@ export const CanvasControl = () => {
   const [perimeterIds, setPerimeterIds] = useState<Array<string>>();
   const [perimeterPoints, setPerimeterPoints] = useState<IPointsMap>();
 
+  const [perimeterEdges, setPerimeterEdges] = useState<Map<string, IEdge>>();
+  const [currentEdgeId, setCurrentEdgeId] = useState<string>();
+
   // can remove later
   useEffect(() => {
     handleAddInitialItems();
@@ -280,9 +285,85 @@ export const CanvasControl = () => {
       positionedImagesPoints
     );
 
-    const { filledPerimeter } = fillCrevices(updatedPerimeter, 277);
+    const minImage = getMinimumImage()!;
+    const { image, minDimension } = minImage;
+
+    const { filledPerimeter } = fillCrevices(
+      updatedPerimeter,
+      minDimension,
+      getMinimumImage
+    );
+
+    const updatedPerimeterPoints = [...filledPerimeter.values()];
+
+    setUpdatedPoints(updatedPerimeterPoints);
 
     setPerimeterPoints(filledPerimeter);
+  };
+
+  const handleEstablishEdges = () => {
+    if (!perimeterPoints?.size) {
+      return;
+    }
+
+    const perimeterEdges = generateEdgesMap(perimeterPoints);
+
+    setPerimeterEdges(perimeterEdges);
+    setCurrentEdgeId([...perimeterEdges.keys()][0]);
+  };
+
+  const handleAddImagesToEdge = async () => {
+    const currentLoadedImages = getLoadedImages();
+
+    if (currentLoadedImages === undefined) {
+      return;
+    }
+
+    if (!perimeterPoints || !currentEdgeId) {
+      return;
+    }
+
+    handleFillCrevices();
+
+    const updatedEdges = generateEdgesMap(perimeterPoints);
+
+    const updatedEdge = updatedEdges.get(currentEdgeId);
+
+    if (!updatedEdge) {
+      return;
+    }
+
+    const { from, to } = updatedEdge.points;
+
+    const edgeWidth = edgeLengthFromCoordinates(
+      from.coordinates,
+      to.coordinates
+    );
+
+    const validatedImages = determineValidImages(
+      currentLoadedImages,
+      edgeWidth
+    );
+
+    if (validatedImages.length === 0) {
+      return;
+    }
+
+    const imagesToAdd = determineImagesToAdd(
+      edgeWidth,
+      currentLoadedImages,
+      validatedImages
+    );
+
+    const positionedImages = generatePositionImages(
+      imagesToAdd,
+      from.coordinates,
+      to.coordinates
+    );
+
+    await handleAddPositionedImages(positionedImages);
+
+    setCurrentEdgeId(updatedEdge.nextEdge);
   };
 
   const handleAddImages = async () => {
@@ -330,8 +411,50 @@ export const CanvasControl = () => {
         to.coordinates
       );
 
-      handleAddPositionedImages(positionedImages);
+      await handleAddPositionedImages(positionedImages);
     }
+
+    // for (const [perimerterEdgeId, perimeterEdgeValue] of perimeterEdges) {
+    //   handleFillCrevices();
+
+    //   const updatedEdges = generateEdgesMap(perimeterPoints);
+
+    //   const updatedEdge = updatedEdges.get(perimerterEdgeId);
+
+    //   if (!updatedEdge) {
+    //     continue;
+    //   }
+
+    //   const { from, to } = perimeterEdgeValue.points;
+
+    //   const edgeWidth = edgeLengthFromCoordinates(
+    //     from.coordinates,
+    //     to.coordinates
+    //   );
+
+    //   const validatedImages = determineValidImages(
+    //     currentLoadedImages,
+    //     edgeWidth
+    //   );
+
+    //   if (validatedImages.length === 0) {
+    //     continue;
+    //   }
+
+    //   const imagesToAdd = determineImagesToAdd(
+    //     edgeWidth,
+    //     currentLoadedImages,
+    //     validatedImages
+    //   );
+
+    //   const positionedImages = generatePositionImages(
+    //     imagesToAdd,
+    //     from.coordinates,
+    //     to.coordinates
+    //   );
+
+    //   await handleAddPositionedImages(positionedImages);
+    // }
   };
 
   return (
@@ -352,6 +475,8 @@ export const CanvasControl = () => {
         <button onClick={handleAgglomerateImages}>Agglomerate</button>
         <button onClick={handleFillCrevices}>Fill</button>
         <button onClick={handleAddImages}>Add Images</button>
+        <button onClick={handleEstablishEdges}>Establish Edges</button>
+        <button onClick={handleAddImagesToEdge}>Add images to edge</button>
       </article>
     </main>
   );
