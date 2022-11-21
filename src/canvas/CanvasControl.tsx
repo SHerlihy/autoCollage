@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { ReactNode, useEffect, useRef, useState } from "react";
 import { Canvas } from "./Canvas";
 // import { useImageChanger } from "./useImageChanger";
 import { useCanvasPositioner } from "./useCanvasPositioner";
@@ -238,8 +238,12 @@ const generatePositionImages = (
   return positionedImages;
 };
 
-export const CanvasControl = () => {
-  const canvasRef = useRef<HTMLCanvasElement>();
+interface ICanvasControlProps {
+  canvasRef: React.MutableRefObject<HTMLCanvasElement | undefined>;
+  children: ReactNode;
+}
+
+export const CanvasControl = ({ canvasRef, children }: ICanvasControlProps) => {
   const [perimeterIds, setPerimeterIds] = useState<Array<string>>();
   const [perimeterPoints, setPerimeterPoints] = useState<IPointsMap>();
 
@@ -459,7 +463,7 @@ export const CanvasControl = () => {
 
   return (
     <main>
-      <Canvas canvasRef={canvasRef} />
+      {children}
       <article className="sidebar">
         <button
           onClick={() => {

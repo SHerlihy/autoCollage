@@ -22,8 +22,9 @@ const useZoom = (canvasRef) => {
   let prev;
   const [zooming, setZooming] = useState(false);
   const { getZoom, setZoom } = zoomClosure;
+
   useEffect(() => {
-    canvasRef.current.onmousewheel = (event) => {
+    canvasRef.current.addEventListener("wheel", (event) => {
       setZoom(event.wheelDelta / 3600);
 
       if (zooming) return;
@@ -39,7 +40,7 @@ const useZoom = (canvasRef) => {
 
         prev = getZoom();
       }, 500);
-    };
+    });
   }, []);
 
   return { zooming, getZoom };

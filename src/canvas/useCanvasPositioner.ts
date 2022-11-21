@@ -78,13 +78,10 @@ export const useCanvasPositioner = (
 
   useEffect(() => {
     const animate = zooming || panning;
-
     if (animate && !animating && canvasContext && canvasRef.current) {
       setAnimate(true);
-
       // mutate positioned images
       // no need coordinates stay the same
-
       animateCanvas(
         () =>
           drawZoomAndPosition(
