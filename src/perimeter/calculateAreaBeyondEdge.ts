@@ -121,7 +121,10 @@ const validAreaOnDiagonalLine = (
     SOHOppositeSideFromRadians(hyp, oppositeRadians)
   );
 
-  const xLength = toDecimalPlaces(getNonHypotenuseSideFromSides(hyp, yLength));
+  const xLength =
+    toDecimalPlaces(hyp) !== yLength
+      ? toDecimalPlaces(getNonHypotenuseSideFromSides(hyp, yLength))
+      : 0;
 
   const BL = { x: currentX, y: currentY };
 

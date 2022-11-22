@@ -123,8 +123,8 @@ const determineImagesToAdd = (
     // width then height
 
     const updatedWidth = validWidth
-      ? remainingWidth - imageValue.width
-      : remainingWidth - imageValue.height;
+      ? remainingWidth - imageValue.width - awayMod
+      : remainingWidth - imageValue.height - awayMod;
 
     if (updatedWidth < 2) {
       break;
@@ -136,7 +136,7 @@ const determineImagesToAdd = (
       ? imageValue.width
       : imageValue.height;
 
-    const across = acrossAccumulator + acrossAdditionalSpace / 2;
+    const across = acrossAccumulator + acrossAdditionalSpace / 2 + awayMod;
 
     acrossAccumulator = acrossAccumulator + acrossAdditionalSpace;
 
